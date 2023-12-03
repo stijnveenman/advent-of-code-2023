@@ -44,6 +44,7 @@ impl FromStr for Game {
     }
 }
 
+#[allow(dead_code)]
 fn valid_game(game: &Game) -> bool {
     let mut h = HashMap::new();
 
@@ -76,16 +77,38 @@ fn valid_game(game: &Game) -> bool {
     true
 }
 
+impl Game {
+    fn power(&self) -> u32 {
+        let mut h = HashMap::new();
+
+        self.rounds.iter().for_each(|round| {
+            round.iter().for_each(|(key, value)| {
+                let cur = h.get(key).unwrap_or(&0u32);
+
+                if value > cur {
+                    h.insert(key, *value);
+                }
+            })
+        });
+
+        let green = u32::max(0, *h.get(&"green".to_string()).unwrap_or(&0u32));
+        let red = u32::max(0, *h.get(&"red".to_string()).unwrap_or(&0u32));
+        let blue = u32::max(0, *h.get(&"blue".to_string()).unwrap_or(&0u32));
+
+        red * blue * green
+    }
+}
+
 fn process(s: &str) -> u32 {
     let games = s
         .lines()
         .map(|s| s.parse::<Game>().unwrap())
-        .filter(valid_game)
+        //.filter(valid_game)
         .collect::<Vec<_>>();
 
     println!("{:?}", games);
 
-    games.into_iter().map(|g| g.id).sum()
+    games.into_iter().map(|g| g.power()).sum()
 }
 
 #[test]
@@ -99,5 +122,8 @@ Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green
 
     let result = process(input);
 
-    assert_eq!(result, 8);
+    //result 1
+    //assert_eq!(result, 8);
+    //result 2
+    assert_eq!(result, 2286);
 }
