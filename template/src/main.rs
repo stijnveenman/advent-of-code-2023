@@ -8,11 +8,11 @@ fn main() {
 }
 
 fn process(s: &str) -> u32 {
-    420
+    todo!()
 }
 
 fn process2(s: &str) -> u32 {
-    420
+    todo!()
 }
 
 static TEST_INPUT: &str = "";
@@ -21,12 +21,12 @@ static TEST_INPUT: &str = "";
 fn test_part1() {
     let result = process(TEST_INPUT);
 
-    assert_eq!(dbg!(result), 420)
+    assert_eq!(dbg!(result), 0)
 }
 
 #[test]
 fn test_part2() {
     let result = process2(TEST_INPUT);
 
-    assert_eq!(dbg!(result), 420)
+    assert_eq!(dbg!(result), 0)
 }

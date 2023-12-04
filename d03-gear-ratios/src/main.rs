@@ -25,11 +25,11 @@ fn process(s: &str) -> u32 {
         prev = Some(current);
     }
 
-    420
+    todo!()
 }
 
 fn process2(s: &str) -> u32 {
-    420
+    todo!()
 }
 
 static TEST_INPUT: &str = "467..114..
@@ -47,12 +47,12 @@ static TEST_INPUT: &str = "467..114..
 fn test_part1() {
     let result = process(TEST_INPUT);
 
-    assert_eq!(dbg!(result), 420)
+    assert_eq!(dbg!(result), 0)
 }
 
 #[test]
 fn test_part2() {
     let result = process2(TEST_INPUT);
 
-    assert_eq!(dbg!(result), 420)
+    assert_eq!(dbg!(result), 0)
 }
