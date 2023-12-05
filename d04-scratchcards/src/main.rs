@@ -1,12 +1,15 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use std::{collections::HashSet, str::FromStr};
+use std::{
+    collections::{HashMap, HashSet},
+    str::FromStr,
+};
 
 fn main() {
     let input = include_str!("./input.txt");
 
-    println!("{}", process(input))
+    println!("{}", process2(input))
 }
 
 #[derive(Debug)]
@@ -47,17 +50,21 @@ impl FromStr for ScratchCard {
 }
 
 impl ScratchCard {
-    fn get_worth(&self) -> u32 {
+    fn get_matches(&self) -> u32 {
         let mut winning = HashSet::new();
         self.winning.iter().for_each(|n| {
             winning.insert(n);
         });
 
-        let count = self.numbers.iter().filter(|n| winning.contains(n)).count();
+        self.numbers.iter().filter(|n| winning.contains(n)).count() as u32
+    }
+
+    fn get_worth(&self) -> u32 {
+        let count = self.get_matches();
         if count == 0 {
             return 0;
         }
-        2u32.pow(count as u32 - 1)
+        2u32.pow(count - 1)
     }
 }
 
@@ -73,7 +80,25 @@ fn process(s: &str) -> u32 {
 }
 
 fn process2(s: &str) -> u32 {
-    todo!()
+    let cards = s
+        .lines()
+        .map(|l| l.parse::<ScratchCard>().unwrap())
+        .collect::<Vec<_>>();
+
+    println!("{:?}", cards);
+
+    let mut hm = HashMap::new();
+
+    for card in cards.iter() {
+        let count = *hm.get(&card.id).unwrap_or(&1);
+
+        let matches = card.get_matches();
+        for i in card.id + 1..=card.id + matches {
+            hm.insert(i, *hm.get(&i).unwrap_or(&1) + count);
+        }
+    }
+
+    cards.iter().map(|c| hm.get(&c.id).unwrap_or(&1)).sum()
 }
 
 static TEST_INPUT: &str = "Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53
@@ -94,5 +119,5 @@ fn test_part1() {
 fn test_part2() {
     let result = process2(TEST_INPUT);
 
-    assert_eq!(dbg!(result), 0)
+    assert_eq!(dbg!(result), 30)
 }
