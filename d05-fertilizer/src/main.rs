@@ -1,12 +1,12 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use std::ops::Range;
+use std::{collections::HashSet, ops::Range};
 
 fn main() {
     let input = include_str!("./input.txt");
 
-    println!("{}", process(input))
+    println!("{}", process2(input))
 }
 
 #[derive(Debug)]
@@ -49,14 +49,12 @@ fn parse_input(s: &str) -> GameData {
         })
         .collect::<Vec<_>>();
 
-    println!("{:?} {:?}", seeds, mappers);
-
     GameData { seeds, mappers }
 }
 
 impl Mapper {
     fn map(&self, i: u64) -> u64 {
-        let diff = dbg!(i) - dbg!(self.source.start);
+        let diff = i - self.source.start;
 
         self.destination.start + diff
     }
@@ -81,7 +79,29 @@ fn process(s: &str) -> u64 {
 }
 
 fn process2(s: &str) -> u64 {
-    todo!()
+    let input = parse_input(s);
+
+    let seeds = input
+        .seeds
+        .chunks(2)
+        .map(|c| (c.first().unwrap(), c.last().unwrap()))
+        .flat_map(|c| (*c.0..*c.0 + *c.1).collect::<Vec<_>>())
+        .collect::<Vec<_>>();
+
+    println!("starting calculation");
+
+    seeds
+        .into_iter()
+        .map(|s| {
+            input.mappers.iter().fold(s, |seed, mappers| {
+                let mapper = mappers.iter().find(|m| m.source.contains(&seed));
+                let Some(mapper) = mapper else { return seed };
+
+                mapper.map(seed)
+            })
+        })
+        .min()
+        .unwrap()
 }
 
 static TEST_INPUT: &str = "seeds: 79 14 55 13
@@ -129,5 +149,5 @@ fn test_part1() {
 fn test_part2() {
     let result = process2(TEST_INPUT);
 
-    assert_eq!(dbg!(result), 0)
+    assert_eq!(dbg!(result), 46)
 }
