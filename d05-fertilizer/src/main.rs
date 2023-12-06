@@ -11,13 +11,13 @@ fn main() {
 
 #[derive(Debug)]
 struct Mapper {
-    source: Range<u32>,
-    destination: Range<u32>,
+    source: Range<u64>,
+    destination: Range<u64>,
 }
 
 #[derive(Debug)]
 struct GameData {
-    seeds: Vec<u32>,
+    seeds: Vec<u64>,
     mappers: Vec<Vec<Mapper>>,
 }
 
@@ -28,7 +28,7 @@ fn parse_input(s: &str) -> GameData {
         .unwrap()
         .split(' ')
         .skip(1)
-        .map(|n| n.parse::<u32>().unwrap())
+        .map(|n| n.parse::<u64>().unwrap())
         .collect::<Vec<_>>();
 
     let mappers = iter
@@ -37,9 +37,9 @@ fn parse_input(s: &str) -> GameData {
                 .skip(1)
                 .map(|l| {
                     let n = l.split(' ').collect::<Vec<_>>();
-                    let des_start = n.first().unwrap().parse::<u32>().unwrap();
-                    let source_start = n.get(1).unwrap().parse::<u32>().unwrap();
-                    let len = n.get(2).unwrap().parse::<u32>().unwrap();
+                    let des_start = n.first().unwrap().parse::<u64>().unwrap();
+                    let source_start = n.get(1).unwrap().parse::<u64>().unwrap();
+                    let len = n.get(2).unwrap().parse::<u64>().unwrap();
                     Mapper {
                         source: (source_start..source_start + len),
                         destination: (des_start..des_start + len),
@@ -54,18 +54,33 @@ fn parse_input(s: &str) -> GameData {
     GameData { seeds, mappers }
 }
 
-fn process(s: &str) -> u32 {
+impl Mapper {
+    fn map(&self, i: u64) -> u64 {
+        let diff = dbg!(i) - dbg!(self.source.start);
+
+        self.destination.start + diff
+    }
+}
+
+fn process(s: &str) -> u64 {
     let input = parse_input(s);
 
     input
         .seeds
         .into_iter()
-        .map(|s| input.mappers.iter().fold(s, |seed, mappers| seed))
+        .map(|s| {
+            input.mappers.iter().fold(s, |seed, mappers| {
+                let mapper = mappers.iter().find(|m| m.source.contains(&seed));
+                let Some(mapper) = mapper else { return seed };
+
+                mapper.map(seed)
+            })
+        })
         .min()
         .unwrap()
 }
 
-fn process2(s: &str) -> u32 {
+fn process2(s: &str) -> u64 {
     todo!()
 }
 
