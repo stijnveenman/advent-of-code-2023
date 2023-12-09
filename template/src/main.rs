@@ -7,11 +7,21 @@ fn main() {
     println!("{}", process(input))
 }
 
+fn parse(s: &str) -> IResult<&str, Vec<Vec<u32>>> {
+    separated_list1(newline, separated_list1(space1, u32))(s)
+}
+
 fn process(s: &str) -> u32 {
+    let (_, input) = parse(s).unwrap();
+    println!("{:?}", input);
+
     todo!()
 }
 
 fn process2(s: &str) -> u32 {
+    let (_, input) = parse(s).unwrap();
+    println!("{:?}", input);
+
     todo!()
 }
 
