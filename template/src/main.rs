@@ -1,5 +1,8 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
+mod util;
+#[allow(unused_imports)]
+use util::*;
 
 fn main() {
     let input = include_str!("./input.txt");
