@@ -1,5 +1,8 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
+mod util;
+#[allow(unused_imports)]
+use util::*;
 
 use nom::{
     character::complete::{i32, newline, space1},
@@ -10,7 +13,7 @@ use nom::{
 fn main() {
     let input = include_str!("./input.txt");
 
-    println!("{}", process(input))
+    println!("{}", process2(input))
 }
 
 fn parse(s: &str) -> IResult<&str, Vec<Vec<i32>>> {
@@ -38,6 +41,23 @@ fn predict(i: Vec<i32>) -> i32 {
         .fold(0, |current, v| current + v.last().unwrap())
 }
 
+fn predict_back(i: Vec<i32>) -> i32 {
+    let mut diffs = vec![i];
+
+    loop {
+        let p = difference(diffs.last().unwrap().as_slice());
+        if p.iter().all(|n| *n == 0) {
+            break;
+        }
+        diffs.push(p);
+    }
+
+    diffs
+        .into_iter()
+        .rev()
+        .fold(0, |current, v| v.first().unwrap() - current)
+}
+
 fn process(s: &str) -> i32 {
     let (_, input) = parse(s).unwrap();
 
@@ -45,7 +65,9 @@ fn process(s: &str) -> i32 {
 }
 
 fn process2(s: &str) -> i32 {
-    todo!()
+    let (_, input) = parse(s).unwrap();
+
+    input.into_iter().map(predict_back).sum()
 }
 
 static TEST_INPUT: &str = "0 3 6 9 12 15
@@ -63,5 +85,5 @@ fn test_part1() {
 fn test_part2() {
     let result = process2(TEST_INPUT);
 
-    assert_eq!(dbg!(result), 0)
+    assert_eq!(dbg!(result), 2)
 }
