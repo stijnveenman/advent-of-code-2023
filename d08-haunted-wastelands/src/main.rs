@@ -1,7 +1,9 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+
+use prime_factorization::Factorization;
 
 fn main() {
     let input = include_str!("./input.txt");
@@ -89,7 +91,7 @@ fn process(s: &str) -> u64 {
     count
 }
 
-fn process2(s: &str) -> u64 {
+fn process2(s: &str) -> u128 {
     let steps = s.lines().next().unwrap().trim();
 
     let map = s
@@ -116,8 +118,8 @@ fn process2(s: &str) -> u64 {
     let looping = positions
         .into_iter()
         .map(|mut pos| {
-            let mut count = 0;
-            let mut prev_count = 0;
+            let mut count = 0u32;
+            let mut prev_count = 0u32;
             let iter = steps.chars().looping();
 
             for step in iter {
@@ -144,24 +146,13 @@ fn process2(s: &str) -> u64 {
         .collect::<Vec<_>>();
 
     println!("{:?}", looping);
+    let primes = looping
+        .into_iter()
+        .flat_map(|n| Factorization::run(n).factors)
+        .collect::<HashSet<_>>();
+    println!("{:?}", primes);
 
-    let mut current = *looping.first().unwrap();
-    loop {
-        let mut q = true;
-        for number in looping.iter() {
-            if current % number != 0 {
-                println!("{} {} {}", current, number, current % number);
-                current += current % number;
-                q = false;
-            }
-        }
-
-        if q {
-            break;
-        }
-    }
-
-    current
+    primes.into_iter().map(|i| i as u128).product()
 }
 
 static TEST_INPUT: &str = "RL
