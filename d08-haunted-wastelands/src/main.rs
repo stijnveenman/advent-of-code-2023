@@ -6,7 +6,7 @@ use std::collections::HashMap;
 fn main() {
     let input = include_str!("./input.txt");
 
-    println!("{}", process(input))
+    println!("{}", process2(input))
 }
 
 struct LoopingIterator<T> {
@@ -49,7 +49,7 @@ where
 }
 
 #[allow(clippy::explicit_counter_loop)]
-fn process(s: &str) -> u32 {
+fn process(s: &str) -> u64 {
     let steps = s.lines().next().unwrap().trim();
 
     let map = s
@@ -89,8 +89,79 @@ fn process(s: &str) -> u32 {
     count
 }
 
-fn process2(s: &str) -> u32 {
-    todo!()
+fn process2(s: &str) -> u64 {
+    let steps = s.lines().next().unwrap().trim();
+
+    let map = s
+        .lines()
+        .skip(2)
+        .map(|l| {
+            let (from, to) = l.split_once('=').unwrap();
+            let to = to.trim();
+            let to = &to[1..to.len() - 1];
+            let (left, right) = to.split_once(',').unwrap();
+
+            (from.trim(), (left.trim(), right.trim()))
+        })
+        .collect::<HashMap<&str, (&str, &str)>>();
+
+    let positions = s
+        .lines()
+        .skip(2)
+        .filter(|l| l.chars().nth(2).unwrap() == 'A')
+        .map(|l| l.split_once(' ').unwrap().0)
+        .collect::<Vec<_>>();
+
+    println!("positions {}", positions.len());
+    let looping = positions
+        .into_iter()
+        .map(|mut pos| {
+            let mut count = 0;
+            let mut prev_count = 0;
+            let iter = steps.chars().looping();
+
+            for step in iter {
+                let next = map.get(pos).unwrap();
+
+                pos = match step {
+                    'L' => next.0,
+                    'R' => next.1,
+                    _ => panic!("invalid step"),
+                };
+
+                count += 1;
+
+                if pos.ends_with('Z') {
+                    match prev_count {
+                        0 => prev_count = count,
+                        _ => break,
+                    }
+                }
+            }
+
+            count - prev_count
+        })
+        .collect::<Vec<_>>();
+
+    println!("{:?}", looping);
+
+    let mut current = *looping.first().unwrap();
+    loop {
+        let mut q = true;
+        for number in looping.iter() {
+            if current % number != 0 {
+                println!("{} {} {}", current, number, current % number);
+                current += current % number;
+                q = false;
+            }
+        }
+
+        if q {
+            break;
+        }
+    }
+
+    current
 }
 
 static TEST_INPUT: &str = "RL
@@ -125,7 +196,18 @@ ZZZ = (ZZZ, ZZZ)",
 
 #[test]
 fn test_part2() {
-    let result = process2(TEST_INPUT);
+    let result = process2(
+        "LR
 
-    assert_eq!(dbg!(result), 0)
+11A = (11B, XXX)
+11B = (XXX, 11Z)
+11Z = (11B, XXX)
+22A = (22B, XXX)
+22B = (22C, 22C)
+22C = (22Z, 22Z)
+22Z = (22B, 22B)
+XXX = (XXX, XXX)",
+    );
+
+    assert_eq!(dbg!(result), 6)
 }
