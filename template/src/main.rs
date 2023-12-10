@@ -1,6 +1,11 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
-mod util;
+muse nom::{
+    character::complete::{newline, space1},
+    multi::separated_list1,
+    IResult,
+};
+od util;
 #[allow(unused_imports)]
 use util::*;
 
