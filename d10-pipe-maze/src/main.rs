@@ -40,7 +40,7 @@ impl From<char> for PipeTile {
 }
 
 impl PipeTile {
-    fn next(&self, pos: (u32, u32)) -> Option<((u32, u32), (u32, u32))> {
+    fn next_options(&self, pos: (i32, i32)) -> Option<((i32, i32), (i32, i32))> {
         match self {
             PipeTile::Vertical => Some(((pos.0, pos.1 + 1), (pos.0, pos.1 - 1))),
             PipeTile::Horizontal => Some(((pos.0 + 1, pos.1), (pos.0 - 1, pos.1))),
@@ -52,34 +52,69 @@ impl PipeTile {
             PipeTile::Ground => None,
         }
     }
+
+    fn next(&self, pos: (i32, i32), prev: (i32, i32)) -> Option<(i32, i32)> {
+        self.next_options(pos).and_then(|(a, b)| {
+            if a == prev {
+                return Some(b);
+            }
+            if b == prev {
+                return Some(a);
+            }
+            None
+        })
+    }
 }
 
 #[allow(clippy::ptr_arg)]
-fn find_start(i: &Vec<Vec<PipeTile>>) -> (u32, u32) {
+fn find_start(i: &Vec<Vec<PipeTile>>) -> (i32, i32) {
     i.iter()
         .enumerate()
         .find(|l| l.1.iter().any(|t| *t == PipeTile::Start))
         .map(|i| {
             (
-                i.0 as u32,
                 i.1.iter()
                     .enumerate()
                     .find(|t| *t.1 == PipeTile::Start)
                     .unwrap()
-                    .0 as u32,
+                    .0 as i32,
+                i.0 as i32,
             )
         })
         .unwrap()
 }
 
 #[allow(clippy::ptr_arg)]
-fn get(i: &Vec<Vec<PipeTile>>, pos: (u32, u32)) -> PipeTile {
-    *i.get(pos.1 as usize).unwrap().get(pos.0 as usize).unwrap()
+fn get(i: &Vec<Vec<PipeTile>>, pos: (i32, i32)) -> Option<&PipeTile> {
+    i.get(pos.1 as usize).and_then(|l| l.get(pos.0 as usize))
 }
 
-fn find_loop(i: Vec<Vec<PipeTile>>) {
-    let mut start = find_start(&i);
-    println!("{:?}", (start, get(&i, start).next(start)));
+fn try_find_loop(i: &Vec<Vec<PipeTile>>, x: i32, y: i32) -> Option<Vec<(i32, i32)>> {
+    let start = find_start(i);
+
+    let mut prev = start;
+    let mut cur = (start.0 + x, start.1 + y);
+    let mut pipe = vec![prev, cur];
+    loop {
+        let Some(n) = get(i, cur).and_then(|n| n.next(cur, prev)) else {
+            return None;
+        };
+        prev = cur;
+        cur = n;
+        pipe.push(n);
+
+        if cur == start {
+            break;
+        }
+    }
+    Some(pipe)
+}
+
+fn find_loop(i: Vec<Vec<PipeTile>>) -> Option<Vec<(i32, i32)>> {
+    try_find_loop(&i, -1, 0)
+        .or_else(|| try_find_loop(&i, 1, 0))
+        .or_else(|| try_find_loop(&i, 0, 1))
+        .or_else(|| try_find_loop(&i, 0, -1))
 }
 
 fn parse(s: &str) -> Vec<Vec<PipeTile>> {
@@ -88,14 +123,14 @@ fn parse(s: &str) -> Vec<Vec<PipeTile>> {
         .collect()
 }
 
-fn process(s: &str) -> u32 {
+fn process(s: &str) -> i32 {
     let input = parse(s);
-    find_loop(input);
+    let l = find_loop(input);
 
-    420
+    l.unwrap().len() as i32 / 2
 }
 
-fn process2(s: &str) -> u32 {
+fn process2(s: &str) -> i32 {
     let input = parse(s);
     println!("{:?}", input);
 
@@ -113,6 +148,32 @@ fn test_part1() {
     let result = process(TEST_INPUT);
 
     assert_eq!(dbg!(result), 4)
+}
+
+#[test]
+fn test_part1_2() {
+    let result = process(
+        "-L|F7
+7S-7|
+L|7||
+-L-J|
+L|-JF",
+    );
+
+    assert_eq!(dbg!(result), 4)
+}
+
+#[test]
+fn test_part1_3() {
+    let result = process(
+        "7-F7-
+.FJ|7
+SJLL7
+|F--J
+LJ.LJ",
+    );
+
+    assert_eq!(dbg!(result), 8)
 }
 
 #[test]
