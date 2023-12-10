@@ -8,7 +8,7 @@ use util::*;
 fn main() {
     let input = include_str!("./input.txt");
 
-    println!("{}", process(input))
+    println!("{}", process2(input))
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -110,11 +110,12 @@ fn try_find_loop(i: &Vec<Vec<PipeTile>>, x: i32, y: i32) -> Option<Vec<(i32, i32
     Some(pipe)
 }
 
-fn find_loop(i: Vec<Vec<PipeTile>>) -> Option<Vec<(i32, i32)>> {
-    try_find_loop(&i, -1, 0)
-        .or_else(|| try_find_loop(&i, 1, 0))
-        .or_else(|| try_find_loop(&i, 0, 1))
-        .or_else(|| try_find_loop(&i, 0, -1))
+#[allow(clippy::ptr_arg)]
+fn find_loop(i: &Vec<Vec<PipeTile>>) -> Option<Vec<(i32, i32)>> {
+    try_find_loop(i, -1, 0)
+        .or_else(|| try_find_loop(i, 1, 0))
+        .or_else(|| try_find_loop(i, 0, 1))
+        .or_else(|| try_find_loop(i, 0, -1))
 }
 
 fn parse(s: &str) -> Vec<Vec<PipeTile>> {
@@ -125,16 +126,91 @@ fn parse(s: &str) -> Vec<Vec<PipeTile>> {
 
 fn process(s: &str) -> i32 {
     let input = parse(s);
-    let l = find_loop(input);
+    let l = find_loop(&input);
 
     l.unwrap().len() as i32 / 2
 }
 
+#[allow(clippy::ptr_arg)]
+fn detect_crossings(l: &Vec<(i32, i32)>, pos: (i32, i32), x: i32, y: i32, w: i32, h: i32) -> i32 {
+    let xr = 0..=w;
+    let yr = 0..=h;
+
+    let mut pos = pos;
+    let mut crossings = 0;
+
+    while xr.contains(&pos.0) && yr.contains(&pos.1) {
+        if l.contains(&pos) {
+            crossings += 1;
+        }
+
+        pos.0 += x;
+        pos.1 += y;
+    }
+
+    crossings
+}
+
+#[allow(clippy::ptr_arg)]
+fn contained(i: &Vec<Vec<PipeTile>>, l: &Vec<(i32, i32)>, pos: (i32, i32)) -> bool {
+    if l.contains(&pos) {
+        return false;
+    }
+    if detect_crossings(
+        l,
+        pos,
+        -1,
+        0,
+        i.first().unwrap().len() as i32,
+        i.len() as i32,
+    ) % 2
+        == 1
+        && detect_crossings(
+            l,
+            pos,
+            1,
+            0,
+            i.first().unwrap().len() as i32,
+            i.len() as i32,
+        ) % 2
+            == 1
+        && detect_crossings(
+            l,
+            pos,
+            0,
+            1,
+            i.first().unwrap().len() as i32,
+            i.len() as i32,
+        ) % 2
+            == 1
+        && detect_crossings(
+            l,
+            pos,
+            0,
+            -1,
+            i.first().unwrap().len() as i32,
+            i.len() as i32,
+        ) % 2
+            == 1
+    {
+        return true;
+    }
+
+    false
+}
+
 fn process2(s: &str) -> i32 {
     let input = parse(s);
-    println!("{:?}", input);
+    let l = find_loop(&input).unwrap();
 
-    todo!()
+    let w = input.first().unwrap().len() as i32;
+    let h = input.len() as i32;
+
+    (0..w)
+        .flat_map(|x| (0..h).map(move |y| (x, y)))
+        .filter(|pos| contained(&input, &l, *pos))
+        .dbg()
+        .count() as i32
 }
 
 static TEST_INPUT: &str = ".....
@@ -178,7 +254,34 @@ LJ.LJ",
 
 #[test]
 fn test_part2() {
-    let result = process2(TEST_INPUT);
+    let result = process2(
+        "...........
+.S-------7.
+.|F-----7|.
+.||.....||.
+.||.....||.
+.|L-7.F-J|.
+.|..|.|..|.
+.L--J.L--J.
+...........",
+    );
 
-    assert_eq!(dbg!(result), 0)
+    assert_eq!(dbg!(result), 4)
+}
+#[test]
+fn test_part2_2() {
+    let result = process2(
+        "FF7FSF7F7F7F7F7F---7
+L|LJ||||||||||||F--J
+FL-7LJLJ||||||LJL-77
+F--JF--7||LJLJ7F7FJ-
+L---JF-JLJ.||-FJLJJ7
+|F|F-JF---7F7-L7L|7|
+|FFJF7L7F-JF7|JL---7
+7-L-JL7||F7|L7F-7F7|
+L.L7LFJ|||||FJL7||LJ
+L7JLJL-JLJLJL--JLJ.L",
+    );
+
+    assert_eq!(dbg!(result), 10)
 }
