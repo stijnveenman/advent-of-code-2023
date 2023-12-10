@@ -101,11 +101,11 @@ fn try_find_loop(i: &Vec<Vec<PipeTile>>, x: i32, y: i32) -> Option<Vec<(i32, i32
         };
         prev = cur;
         cur = n;
-        pipe.push(n);
 
         if cur == start {
             break;
         }
+        pipe.push(n);
     }
     Some(pipe)
 }
@@ -132,85 +132,60 @@ fn process(s: &str) -> i32 {
 }
 
 #[allow(clippy::ptr_arg)]
-fn detect_crossings(l: &Vec<(i32, i32)>, pos: (i32, i32), x: i32, y: i32, w: i32, h: i32) -> i32 {
-    let xr = 0..=w;
-    let yr = 0..=h;
+fn count_outside(i: &Vec<Vec<PipeTile>>, l: &[(i32, i32)]) -> i32 {
+    let mut c = 0;
 
-    let mut pos = pos;
-    let mut crossings = 0;
+    for y in 0..i.len() {
+        let mut outside = true;
+        for x in 0..i.first().unwrap().len() {
+            let pos = (x as i32, y as i32);
 
-    while xr.contains(&pos.0) && yr.contains(&pos.1) {
-        if l.contains(&pos) {
-            crossings += 1;
+            if l.contains(&pos) {
+                match get(i, pos).unwrap() {
+                    PipeTile::Vertical => outside = !outside,
+                    PipeTile::Horizontal => (),
+                    PipeTile::UpRight => (),
+                    PipeTile::UpLeft => (),
+                    PipeTile::DownLeft => outside = !outside,
+                    PipeTile::DownRight => outside = !outside,
+                    PipeTile::Start => (),
+                    PipeTile::Ground => (),
+                }
+            } else if !outside {
+                println!("{:?}", pos);
+                c += 1
+            }
         }
-
-        pos.0 += x;
-        pos.1 += y;
     }
 
-    crossings
+    c
 }
 
 #[allow(clippy::ptr_arg)]
-fn contained(i: &Vec<Vec<PipeTile>>, l: &Vec<(i32, i32)>, pos: (i32, i32)) -> bool {
-    if l.contains(&pos) {
-        return false;
-    }
-    if detect_crossings(
-        l,
-        pos,
-        -1,
-        0,
-        i.first().unwrap().len() as i32,
-        i.len() as i32,
-    ) % 2
-        == 1
-        && detect_crossings(
-            l,
-            pos,
-            1,
-            0,
-            i.first().unwrap().len() as i32,
-            i.len() as i32,
-        ) % 2
-            == 1
-        && detect_crossings(
-            l,
-            pos,
-            0,
-            1,
-            i.first().unwrap().len() as i32,
-            i.len() as i32,
-        ) % 2
-            == 1
-        && detect_crossings(
-            l,
-            pos,
-            0,
-            -1,
-            i.first().unwrap().len() as i32,
-            i.len() as i32,
-        ) % 2
-            == 1
-    {
-        return true;
-    }
+fn fix_start(v: &mut Vec<Vec<PipeTile>>, l: &[(i32, i32)]) {
+    let first = l.get(1).unwrap();
+    let end = l.last().unwrap();
 
-    false
+    let diff = (first.0 - end.0, first.1 - end.1);
+
+    let new_start = match diff {
+        (1, -1) => PipeTile::DownRight,
+        (-1, -1) => PipeTile::DownLeft,
+        _ => panic!("unhandled diff {:?}", diff),
+    };
+
+    let start = l.first().unwrap();
+    let row = v.get_mut(start.1 as usize).unwrap();
+    row[start.0 as usize] = new_start;
 }
 
 fn process2(s: &str) -> i32 {
-    let input = parse(s);
+    let mut input = parse(s);
     let l = find_loop(&input).unwrap();
+    fix_start(&mut input, l.as_slice());
+    let _ = input.iter().dbg().collect::<Vec<_>>();
 
-    let w = input.first().unwrap().len() as i32;
-    let h = input.len() as i32;
-
-    (0..w)
-        .flat_map(|x| (0..h).map(move |y| (x, y)))
-        .filter(|pos| contained(&input, &l, *pos))
-        .dbg()
-        .count() as i32
+    count_outside(&input, l.as_slice())
 }
 
 static TEST_INPUT: &str = ".....
@@ -268,6 +243,7 @@ fn test_part2() {
 
     assert_eq!(dbg!(result), 4)
 }
+
 #[test]
 fn test_part2_2() {
     let result = process2(
@@ -284,4 +260,22 @@ L7JLJL-JLJLJL--JLJ.L",
     );
 
     assert_eq!(dbg!(result), 10)
+}
+
+#[test]
+fn test_part2_3() {
+    let result = process2(
+        ".F----7F7F7F7F-7....
+.|F--7||||||||FJ....
+.||.FJ||||||||L7....
+FJL7L7LJLJ||LJ.L-7..
+L--J.L7...LJS7F-7L7.
+....F-J..F7FJ|L7L7L7
+....L7.F7||L7|.L7L7|
+.....|FJLJ|FJ|F7|.LJ
+....FJL-7.||.||||...
+....L---J.LJ.LJLJ...",
+    );
+
+    assert_eq!(dbg!(result), 8)
 }
