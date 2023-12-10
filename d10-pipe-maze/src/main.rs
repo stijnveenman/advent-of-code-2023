@@ -2,6 +2,11 @@
 #![allow(unused_variables)]
 mod util;
 
+use nom::{
+    character::complete::{self, none_of},
+    multi::{many1, separated_list1},
+    IResult, Parser,
+};
 #[allow(unused_imports)]
 use util::*;
 
@@ -118,14 +123,12 @@ fn find_loop(i: &Vec<Vec<PipeTile>>) -> Option<Vec<(i32, i32)>> {
         .or_else(|| try_find_loop(i, 0, -1))
 }
 
-fn parse(s: &str) -> Vec<Vec<PipeTile>> {
-    s.lines()
-        .map(|l| l.chars().map(|c| c.into()).collect())
-        .collect()
+fn parse(s: &str) -> IResult<&str, Vec<Vec<PipeTile>>> {
+    separated_list1(complete::char('\n'), many1(none_of("\n").map(|c| c.into())))(s)
 }
 
 fn process(s: &str) -> i32 {
-    let input = parse(s);
+    let (_, input) = parse(s).unwrap();
     let l = find_loop(&input);
 
     l.unwrap().len() as i32 / 2
@@ -180,7 +183,7 @@ fn fix_start(v: &mut Vec<Vec<PipeTile>>, l: &[(i32, i32)]) {
 }
 
 fn process2(s: &str) -> i32 {
-    let mut input = parse(s);
+    let (_, mut input) = parse(s).unwrap();
     let l = find_loop(&input).unwrap();
     fix_start(&mut input, l.as_slice());
     let _ = input.iter().dbg().collect::<Vec<_>>();
