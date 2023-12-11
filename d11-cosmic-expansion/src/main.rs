@@ -14,7 +14,7 @@ use util::*;
 fn main() {
     let input = include_str!("./input.txt");
 
-    println!("{}", process(input))
+    println!("{}", process(input, 999999))
 }
 
 type Span<'a> = LocatedSpan<&'a str>;
@@ -49,7 +49,7 @@ fn get_size(points: &[Point]) -> Point {
     }
 }
 
-fn expand(points: Vec<Point>) -> Vec<Point> {
+fn expand(points: Vec<Point>, expansion: isize) -> Vec<Point> {
     let size = get_size(points.as_slice());
 
     let empty_cols = (0..size.x)
@@ -66,8 +66,8 @@ fn expand(points: Vec<Point>) -> Vec<Point> {
             let dy = empty_rows.iter().filter(|c| p.y > **c).count() as isize;
 
             Point {
-                x: p.x + dx,
-                y: p.y + dy,
+                x: p.x + (dx * expansion),
+                y: p.y + (dy * expansion),
             }
         })
         .collect()
@@ -79,10 +79,10 @@ fn pairs(l: usize) -> Vec<(usize, usize)> {
         .collect()
 }
 
-fn process(s: &str) -> usize {
+fn process(s: &str, expansion: isize) -> usize {
     let (_, points) = parse(LocatedSpan::new(s)).unwrap();
 
-    let points = expand(points);
+    let points = expand(points, expansion);
 
     pairs(points.len())
         .iter()
@@ -115,14 +115,17 @@ static TEST_INPUT: &str = "...#......
 
 #[test]
 fn test_part1() {
-    let result = process(TEST_INPUT);
+    let result = process(TEST_INPUT, 1);
 
     assert_eq!(dbg!(result), 374)
 }
 
 #[test]
 fn test_part2() {
-    let result = process2(TEST_INPUT);
+    assert_eq!(process(TEST_INPUT, 9), 1030);
+}
 
-    assert_eq!(dbg!(result), 0)
+#[test]
+fn test_part3() {
+    assert_eq!(process(TEST_INPUT, 99), 8410);
 }
