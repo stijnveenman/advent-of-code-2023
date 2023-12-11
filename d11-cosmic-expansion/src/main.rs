@@ -25,6 +25,12 @@ struct Point {
     y: isize,
 }
 
+impl Point {
+    fn distance_to(&self, other: &Point) -> usize {
+        self.x.abs_diff(other.x) + self.y.abs_diff(other.y)
+    }
+}
+
 fn as_point(span: Span) -> Point {
     Point {
         x: span.get_column() as isize - 1,
@@ -64,18 +70,29 @@ fn expand(points: Vec<Point>) -> Vec<Point> {
                 y: p.y + dy,
             }
         })
-        .dbg()
         .collect()
 }
 
-fn process(s: &str) -> u32 {
+fn pairs(l: usize) -> Vec<(usize, usize)> {
+    (0..l)
+        .flat_map(|x| (x + 1..l).map(move |y| (x, y)))
+        .collect()
+}
+
+fn process(s: &str) -> usize {
     let (_, points) = parse(LocatedSpan::new(s)).unwrap();
 
     let points = expand(points);
 
-    println!("{:?}", points);
+    pairs(points.len())
+        .iter()
+        .map(|p| {
+            let a = points.get(p.0).unwrap();
+            let b = points.get(p.1).unwrap();
 
-    todo!()
+            a.distance_to(b)
+        })
+        .sum()
 }
 
 fn process2(s: &str) -> u32 {
