@@ -1,8 +1,10 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 use nom::{
-    character::complete::{newline, space1},
-    multi::separated_list1,
+    bytes::complete::is_a,
+    character::complete::{self},
+    multi::many0,
+    sequence::preceded,
     IResult,
 };
 mod util;
@@ -15,8 +17,8 @@ fn main() {
     println!("{}", process(input))
 }
 
-fn parse(s: &str) -> IResult<&str, Vec<Vec<u32>>> {
-    separated_list1(newline, separated_list1(space1, u32))(s)
+fn parse(s: &str) -> IResult<&str, Vec<char>> {
+    many0(preceded(is_a(".\n"), complete::char('#')))(s)
 }
 
 fn process(s: &str) -> u32 {
@@ -33,13 +35,22 @@ fn process2(s: &str) -> u32 {
     todo!()
 }
 
-static TEST_INPUT: &str = "";
+static TEST_INPUT: &str = "...#......
+.......#..
+#.........
+..........
+......#...
+.#........
+.........#
+..........
+.......#..
+#...#.....";
 
 #[test]
 fn test_part1() {
     let result = process(TEST_INPUT);
 
-    assert_eq!(dbg!(result), 0)
+    assert_eq!(dbg!(result), 374)
 }
 
 #[test]
