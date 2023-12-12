@@ -84,18 +84,22 @@ fn count_options(l: LineSlice) -> usize {
         println!("{:?}", next_o);
 
         if next_o.1.len() == 1 {
-            println!("returning full match\n");
-            return 1;
+            println!("found full match\n");
+            s += 1;
+        } else {
+            let next_len = next_o.1.first().unwrap();
+            let Some(next_sl) = next_o.0.get(next_len + 1..) else {
+                return s;
+            };
+            let next = (next_sl, next_o.1.slice(1..));
+
+            println!(" {:?}", next);
+            s += count_options(next);
         }
 
-        let next_len = next_o.1.first().unwrap();
-        let Some(next_sl) = next_o.0.get(next_len + 1..) else {
+        if *next_o.0.get(0).unwrap() == Point::On {
             return s;
-        };
-        let next = (next_sl, next_o.1.slice(1..));
-
-        println!(" {:?}", next);
-        s += count_options(next);
+        }
 
         cur = (next_o.0.slice(1..), next_o.1);
     }
@@ -148,6 +152,27 @@ fn test_part1_4() {
     let result = process("?#?#?#?#?#?#?#? 1,3,1,6");
 
     assert_eq!(dbg!(result), 1)
+}
+
+#[test]
+fn test_part1_5() {
+    let result = process("?????#??.????? 7,4");
+
+    assert_eq!(dbg!(result), 4)
+}
+
+#[test]
+fn test_part1_6() {
+    let result = process("?###???????? 3,2,1");
+
+    assert_eq!(dbg!(result), 10)
+}
+
+#[test]
+fn test_part1_7() {
+    let result = process("#.?#??#???##? 1,2,7");
+
+    assert_eq!(dbg!(result), 3)
 }
 
 #[test]
