@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 use nom::{
-    character::complete::{i32, one_of},
+    character::complete::{i32, one_of, u32},
     multi::{many1, separated_list1},
     sequence::separated_pair,
     IResult, Parser,
@@ -32,7 +32,15 @@ fn to_point(c: char) -> Point {
     }
 }
 
-type Line = (Vec<Point>, Vec<i32>);
+#[derive(Debug)]
+struct Line(Vec<Point>, Vec<usize>);
+type LineSlice<'a> = (&'a [Point], &'a [usize]);
+
+impl Line {
+    fn as_ref(&self) -> LineSlice {
+        (self.0.as_ref(), self.1.as_ref())
+    }
+}
 
 fn parse(s: &str) -> IResult<&str, Vec<Line>> {
     separated_list1(
@@ -40,14 +48,19 @@ fn parse(s: &str) -> IResult<&str, Vec<Line>> {
         separated_pair(
             many1(one_of(".?#").map(to_point)),
             one_of(" "),
-            separated_list1(one_of(","), i32),
-        ),
+            separated_list1(one_of(","), u32.map(|d| d as usize)),
+        )
+        .map(|l| Line(l.0, l.1)),
     )(s)
+}
+
+fn count_options(l: LineSlice) -> usize {
+    2
 }
 
 fn process(s: &str) -> u32 {
     let (_, input) = parse(s).unwrap();
-    println!("{:?}", input);
+    println!("{:?}", count_options(input.first().unwrap().as_ref()));
 
     todo!()
 }
