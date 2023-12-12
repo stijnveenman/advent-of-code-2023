@@ -82,7 +82,7 @@ fn count_options(l: LineSlice) -> usize {
         //println!("{:?}", next_o);
 
         if next_o.1.len() == 1 {
-            //println!("returning full match");
+            //println!("returning full match\n");
             return 1;
         }
 
@@ -95,7 +95,7 @@ fn count_options(l: LineSlice) -> usize {
         //println!(" {:?}", next);
         s += count_options(next);
 
-        cur = (cur.0.slice(1..), cur.1);
+        cur = (next_o.0.slice(1..), next_o.1);
     }
 
     s
