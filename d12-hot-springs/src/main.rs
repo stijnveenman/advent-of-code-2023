@@ -15,7 +15,7 @@ use util::*;
 fn main() {
     let input = include_str!("./input.txt");
 
-    println!("{:?}", compare(input))
+    println!("{:?}", process(input))
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -156,7 +156,17 @@ fn count_options(l: LineSlice) -> usize {
 
         if next_o.1.len() == 1 {
             //println!("found full match\n");
-            s += 1;
+            let next_len = next_o.1.first().unwrap();
+            // TODO not sure
+            if !next_o
+                .0
+                .get(*next_len..)
+                .unwrap()
+                .iter()
+                .any(|p| *p == Point::On)
+            {
+                s += 1;
+            };
         } else {
             let next_len = next_o.1.first().unwrap();
             let Some(next_sl) = next_o.0.get(next_len + 1..) else {
@@ -192,12 +202,17 @@ fn compare(s: &str) {
         .inspect(|l| println!("{} expected: {} got {}", l.0, l.1, l.2))
         .fold((0, 0), |a, b| (a.0 + b.1, a.1 + b.2));
 
-    println!("final result expected {} got {}", result.0, result.1);
+    println!(
+        "final result expected {} got {} diff {}",
+        result.0,
+        result.1,
+        result.0.abs_diff(result.1)
+    );
 }
 
 fn process(s: &str) -> usize {
     let (_, input) = parse(s).unwrap();
-    input.iter().map(|l| count_options(l.as_ref())).dbg().sum()
+    input.iter().map(|l| count_options(l.as_ref())).sum()
 }
 
 fn process2(s: &str) -> u32 {
