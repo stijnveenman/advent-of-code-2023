@@ -8,17 +8,19 @@ use nom::{
     sequence::separated_pair,
     IResult, Parser, Slice,
 };
+use rayon::prelude::*;
 mod util;
+use rayon::prelude::IntoParallelIterator;
 #[allow(unused_imports)]
 use util::*;
 
 fn main() {
     let input = include_str!("./input.txt");
 
-    println!("{:?}", process(input))
+    println!("{:?}", process2(input))
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 enum Point {
     On,
     Off,
@@ -210,16 +212,32 @@ fn compare(s: &str) {
     );
 }
 
+fn expand(l: Line) -> Line {
+    let mut left = l.0;
+    let right = l.1;
+    let copy = left.to_vec();
+
+    for i in 0..4 {
+        left.push(Point::Unkown);
+        left.extend(copy.iter().copied());
+    }
+
+    Line(left, right.repeat(5))
+}
+
 fn process(s: &str) -> usize {
     let (_, input) = parse(s).unwrap();
     input.iter().map(|l| count_options(l.as_ref())).sum()
 }
 
-fn process2(s: &str) -> u32 {
+fn process2(s: &str) -> usize {
     let (_, input) = parse(s).unwrap();
-    println!("{:?}", input);
-
-    todo!()
+    input
+        .into_par_iter()
+        .map(expand)
+        .map(|l| count_options(l.as_ref()))
+        .inspect(|l| println!("{}", l))
+        .sum()
 }
 
 static TEST_INPUT: &str = "???.### 1,1,3
@@ -289,5 +307,5 @@ fn test_part1_8() {
 fn test_part2() {
     let result = process2(TEST_INPUT);
 
-    assert_eq!(dbg!(result), 0)
+    assert_eq!(dbg!(result), 525152)
 }
