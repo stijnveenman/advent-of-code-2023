@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
+use std::collections::HashMap;
+
 use itertools::{repeat_n, Itertools};
 use nom::{
     bytes::complete::{is_a, tag},
@@ -20,7 +22,7 @@ fn main() {
     println!("{:?}", process2(input))
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 enum Point {
     On,
     Off,
@@ -36,7 +38,7 @@ fn to_point(c: char) -> Point {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Hash, PartialEq, Eq)]
 struct Line(Vec<Point>, Vec<usize>);
 type LineSlice<'a> = (&'a [Point], &'a [usize]);
 
@@ -101,7 +103,7 @@ fn parse_line(input: &str) -> IResult<&str, Puzzle> {
     ))
 }
 
-fn count_options(l: LineSlice) -> usize {
+fn count_options(l: LineSlice, hm: &mut HashMap<Line, usize>) -> usize {
     let mut s = 0;
     let mut cur = l;
     while !cur.0.is_empty() {
@@ -131,9 +133,16 @@ fn count_options(l: LineSlice) -> usize {
                 return s;
             };
             let next = (next_sl, next_o.1.slice(1..));
+            let next_l = Line(next.0.to_vec(), next.1.to_vec());
 
             //println!(" ->> {:?}", next);
-            s += count_options(next);
+            if let Some(ns) = hm.get(&next_l) {
+                s += ns;
+            } else {
+                let re = count_options(next, hm);
+                s += re;
+                hm.insert(next_l, re);
+            }
         }
 
         if *next_o.0.get(0).unwrap() == Point::On {
@@ -161,7 +170,10 @@ fn expand(l: Line) -> Line {
 
 fn process(s: &str) -> usize {
     let (_, input) = parse(s).unwrap();
-    input.iter().map(|l| count_options(l.as_ref())).sum()
+    input
+        .iter()
+        .map(|l| count_options(l.as_ref(), &mut HashMap::new()))
+        .sum()
 }
 
 fn process2(s: &str) -> usize {
@@ -169,7 +181,7 @@ fn process2(s: &str) -> usize {
     input
         .into_par_iter()
         .map(expand)
-        .map(|l| count_options(l.as_ref()))
+        .map(|l| count_options(l.as_ref(), &mut HashMap::new()))
         .inspect(|l| println!("{}", l))
         .sum()
 }
