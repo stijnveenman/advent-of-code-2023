@@ -101,50 +101,6 @@ fn parse_line(input: &str) -> IResult<&str, Puzzle> {
     ))
 }
 
-impl<'a> Puzzle<'a> {
-    fn generate_permutations(&self) -> Vec<String> {
-        let options: Vec<String> = repeat_n([".", "#"].into_iter(), self.spaces_to_fill as usize)
-            .multi_cartesian_product()
-            .map(|v| v.join(""))
-            .collect();
-
-        options
-    }
-    fn check_option(&self, option: &str) -> bool {
-        let mut option_iter = option.chars();
-        let filled_option = self
-            .line
-            .chars()
-            .map(|c| match c {
-                '?' => option_iter
-                    .next()
-                    .expect("should have a length similar to needed gaps"),
-                value => value,
-            })
-            .collect::<String>();
-        let counts = filled_option
-            .chars()
-            .group_by(|c| c == &'#')
-            .into_iter()
-            .filter_map(|(is_hashes, group)| is_hashes.then_some(group.into_iter().count() as u32))
-            .collect::<Vec<u32>>();
-        self.batches[..] == counts[..]
-    }
-    fn possible_solution_count(&self) -> usize {
-        let options = self.generate_permutations();
-        let count = options
-            .iter()
-            .filter(|option| self.check_option(option))
-            .count();
-        count
-    }
-}
-fn process_line(input: &str) -> usize {
-    let (_input, puzzle) = parse_line(input).expect("should parse a valid line");
-
-    puzzle.possible_solution_count()
-}
-
 fn count_options(l: LineSlice) -> usize {
     let mut s = 0;
     let mut cur = l;
@@ -188,28 +144,6 @@ fn count_options(l: LineSlice) -> usize {
     }
 
     s
-}
-
-fn compare(s: &str) {
-    let result = s
-        .lines()
-        .map(|l| {
-            let (_, input) = parse(l).unwrap();
-            let mine = count_options(input.first().unwrap().as_ref());
-            let theirs = process_line(l);
-
-            (l, theirs, mine)
-        })
-        .filter(|l| l.1 != l.2)
-        .inspect(|l| println!("{} expected: {} got {}", l.0, l.1, l.2))
-        .fold((0, 0), |a, b| (a.0 + b.1, a.1 + b.2));
-
-    println!(
-        "final result expected {} got {} diff {}",
-        result.0,
-        result.1,
-        result.0.abs_diff(result.1)
-    );
 }
 
 fn expand(l: Line) -> Line {
