@@ -1,10 +1,13 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
-use std::collections::HashMap;
 
+use itertools::Itertools;
 use nom::{bytes::complete::take, multi::many0, IResult, Parser};
 use nom_locate::LocatedSpan;
 #[allow(unused_imports)]
+mod util;
+#[allow(unused_imports)]
+use util::*;
 
 fn main() {
     let input = include_str!("./input.txt");
@@ -56,89 +59,41 @@ fn as_rock(span: Span) -> Rock {
         _ => Rock::new(p, RockType::Unknown),
     }
 }
-
-fn shift_up(v: &[Rock], x: isize, h: isize) -> Vec<Rock> {
-    let rocks = v
-        .iter()
-        .filter(|r| r.point.x == x)
-        .map(|r| (r.point.y, r))
-        .collect::<HashMap<_, _>>();
-    let mut count = 0;
-    let mut new_rocks = vec![];
-
-    for y in (0..=h).rev() {
-        if let Some(r) = rocks.get(&y) {
-            match r.rock {
-                RockType::Round => count += 1,
-                RockType::Unknown => todo!(),
-                RockType::Cube => {
-                    for i in 0..count {
-                        new_rocks.push(Rock::new(Point { x, y: y + i + 1 }, RockType::Round))
-                    }
-                    count = 0;
-                }
-            }
-        }
-    }
-
-    for i in 0..count {
-        println!("{} {}", x, i);
-        new_rocks.push(Rock::new(Point { x, y: i }, RockType::Round));
-    }
-
-    new_rocks.append(
-        &mut v
-            .iter()
-            .filter(|&x| x.rock == RockType::Cube)
-            .cloned()
-            .collect(),
-    );
-    new_rocks
+fn calculate_load(v: &[Point], h: isize) -> isize {
+    v.iter().map(|r| h + 1 - r.y).sum()
 }
 
-fn shift_right(v: &[Rock], y: isize, w: isize) -> Vec<Rock> {
-    let rocks = v
-        .iter()
-        .filter(|r| r.point.y == y)
-        .map(|r| (r.point.x, r))
-        .collect::<HashMap<_, _>>();
-    let mut count = 0;
-    let mut new_rocks = vec![];
+fn build_shiftmap_up(v: &[Rock]) -> Vec<Vec<isize>> {
+    let width = v.iter().map(|r| r.point.x).max().unwrap();
+    let height = v.iter().map(|r| r.point.y).max().unwrap();
 
-    for x in (0..=w).rev() {
-        if let Some(r) = rocks.get(&x) {
-            match r.rock {
-                RockType::Round => count += 1,
-                RockType::Unknown => todo!(),
-                RockType::Cube => {
-                    for i in 0..count {
-                        new_rocks.push(Rock::new(Point { x: x - i - 1, y }, RockType::Round))
-                    }
-                    count = 0;
-                }
-            }
-        }
-    }
-
-    for i in 0..count {
-        new_rocks.push(Rock::new(Point { x: i, y }, RockType::Round));
-    }
-
-    new_rocks.append(
-        &mut v
-            .iter()
-            .filter(|&x| x.rock == RockType::Cube)
-            .cloned()
-            .collect(),
-    );
-    new_rocks
+    (0..=width)
+        .map(|x| {
+            (0..=height)
+                .map(|y| {
+                    v.iter()
+                        .filter(|r| r.rock == RockType::Cube)
+                        .filter(|r| r.point.x == x && r.point.y < y)
+                        .map(|r| r.point.y + 1)
+                        .max()
+                        .unwrap_or(0)
+                })
+                .collect()
+        })
+        .collect()
 }
 
-fn calculate_load(v: &[Rock], h: isize) -> isize {
-    v.iter()
-        .filter(|r| r.rock == RockType::Round)
-        .map(|r| h + 1 - r.point.y)
-        .sum()
+fn shift_up(v: &mut [&mut Point], map: &[isize]) {
+    for (key, group) in v
+        .iter_mut()
+        .sorted_by(|a, b| a.y.cmp(&b.y))
+        .group_by(|v| map[v.y as usize])
+        .into_iter()
+    {
+        for (offset, point) in group.enumerate() {
+            point.y = key + offset as isize;
+        }
+    }
 }
 
 fn parse(s: Span) -> IResult<Span, Vec<Rock>> {
@@ -156,27 +111,33 @@ fn process(s: &str) -> isize {
     let (_, input) = parse(LocatedSpan::new(s)).unwrap();
     let width = input.iter().map(|r| r.point.x).max().unwrap();
     let height = input.iter().map(|r| r.point.y).max().unwrap();
-    (0..=width)
-        .map(|x| shift_up(input.as_slice(), x, height))
-        .map(|x| calculate_load(x.as_slice(), height))
-        .sum()
+
+    let map = build_shiftmap_up(input.as_slice());
+
+    let mut points = input
+        .into_iter()
+        .filter(|r| r.rock == RockType::Round)
+        .map(|r| r.point)
+        .collect::<Vec<_>>();
+
+    for (x, group) in &points
+        .iter_mut()
+        .sorted_by(|a, b| a.x.cmp(&b.x))
+        .group_by(|r| r.x)
+    {
+        let mut b = group.collect::<Vec<_>>();
+        shift_up(b.as_mut_slice(), map[x as usize].as_ref());
+    }
+
+    calculate_load(points.as_slice(), height)
 }
 
 fn process2(s: &str) -> isize {
-    let (_, mut input) = parse(LocatedSpan::new(s)).unwrap();
+    let (_, input) = parse(LocatedSpan::new(s)).unwrap();
     let width = input.iter().map(|r| r.point.x).max().unwrap();
     let height = input.iter().map(|r| r.point.y).max().unwrap();
 
-    for _ in 0..1000000000 {
-        input = (0..width)
-            .flat_map(|x| shift_up(input.as_slice(), x, height))
-            .collect();
-
-        input = (0..height)
-            .flat_map(|y| shift_right(input.as_slice(), y, width))
-            .collect();
-    }
-    calculate_load(input.as_slice(), height)
+    todo!()
 }
 
 static TEST_INPUT: &str = "O....#....
@@ -201,5 +162,5 @@ fn test_part1() {
 fn test_part2() {
     let result = process2(TEST_INPUT);
 
-    assert_eq!(dbg!(result), 0)
+    assert_eq!(dbg!(result), 64)
 }
