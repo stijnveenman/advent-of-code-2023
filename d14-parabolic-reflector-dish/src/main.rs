@@ -63,6 +63,26 @@ fn calculate_load(v: &[Point], h: isize) -> isize {
     v.iter().map(|r| h + 1 - r.y).sum()
 }
 
+fn build_shiftmap_down(v: &[Rock]) -> Vec<Vec<isize>> {
+    let width = v.iter().map(|r| r.point.x).max().unwrap();
+    let height = v.iter().map(|r| r.point.y).max().unwrap();
+
+    (0..=width)
+        .map(|x| {
+            (0..=height)
+                .map(|y| {
+                    v.iter()
+                        .filter(|r| r.rock == RockType::Cube)
+                        .filter(|r| r.point.x == x && r.point.y > y)
+                        .map(|r| r.point.y - 1)
+                        .min()
+                        .unwrap_or(height)
+                })
+                .collect()
+        })
+        .collect()
+}
+
 fn build_shiftmap_up(v: &[Rock]) -> Vec<Vec<isize>> {
     let width = v.iter().map(|r| r.point.x).max().unwrap();
     let height = v.iter().map(|r| r.point.y).max().unwrap();
@@ -81,6 +101,24 @@ fn build_shiftmap_up(v: &[Rock]) -> Vec<Vec<isize>> {
                 .collect()
         })
         .collect()
+}
+fn shift_down(points: &mut [Point], maps: &[Vec<isize>]) {
+    for (x, group) in &points
+        .iter_mut()
+        .sorted_by(|a, b| a.x.cmp(&b.x))
+        .group_by(|r| r.x)
+    {
+        let map = &maps[x as usize];
+        for (key, group) in group
+            .sorted_by(|a, b| a.y.cmp(&b.y))
+            .group_by(|v| map[v.y as usize])
+            .into_iter()
+        {
+            for (offset, point) in group.enumerate() {
+                point.y = key - offset as isize;
+            }
+        }
+    }
 }
 
 fn shift_up(points: &mut [Point], maps: &[Vec<isize>]) {
@@ -136,7 +174,9 @@ fn process2(s: &str) -> isize {
     let width = input.iter().map(|r| r.point.x).max().unwrap();
     let height = input.iter().map(|r| r.point.y).max().unwrap();
 
-    let maps = build_shiftmap_up(input.as_slice());
+    let up_maps = build_shiftmap_up(input.as_slice());
+    let down_maps = build_shiftmap_down(input.as_slice());
+    println!("{:?}", down_maps);
 
     let mut points = input
         .into_iter()
@@ -145,13 +185,8 @@ fn process2(s: &str) -> isize {
         .collect::<Vec<_>>();
 
     for i in 0..1000 {
-        if i % 10 == 0 {
-            println!("{}", i);
-        }
-        shift_up(points.as_mut_slice(), &maps);
-        shift_up(points.as_mut_slice(), &maps);
-        shift_up(points.as_mut_slice(), &maps);
-        shift_up(points.as_mut_slice(), &maps);
+        shift_up(points.as_mut_slice(), &up_maps);
+        shift_down(points.as_mut_slice(), &up_maps);
     }
 
     calculate_load(points.as_slice(), height)
