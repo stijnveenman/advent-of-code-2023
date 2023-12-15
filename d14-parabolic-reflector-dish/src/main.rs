@@ -83,18 +83,7 @@ fn build_shiftmap_up(v: &[Rock]) -> Vec<Vec<isize>> {
         .collect()
 }
 
-fn shift_up(v: &mut [&mut Point], map: &[isize]) {
-    for (key, group) in v
-        .iter_mut()
-        .sorted_by(|a, b| a.y.cmp(&b.y))
-        .group_by(|v| map[v.y as usize])
-        .into_iter()
-    {
-        for (offset, point) in group.enumerate() {
-            point.y = key + offset as isize;
-        }
-    }
-}
+fn shift_up(v: &mut [&mut Point], map: &[isize]) {}
 
 fn parse(s: Span) -> IResult<Span, Vec<Rock>> {
     let (s, result) = many0(take(1u8).map(as_rock))(s)?;
@@ -112,7 +101,7 @@ fn process(s: &str) -> isize {
     let width = input.iter().map(|r| r.point.x).max().unwrap();
     let height = input.iter().map(|r| r.point.y).max().unwrap();
 
-    let map = build_shiftmap_up(input.as_slice());
+    let maps = build_shiftmap_up(input.as_slice());
 
     let mut points = input
         .into_iter()
@@ -125,8 +114,16 @@ fn process(s: &str) -> isize {
         .sorted_by(|a, b| a.x.cmp(&b.x))
         .group_by(|r| r.x)
     {
-        let mut b = group.collect::<Vec<_>>();
-        shift_up(b.as_mut_slice(), map[x as usize].as_ref());
+        let map = &maps[x as usize];
+        for (key, group) in group
+            .sorted_by(|a, b| a.y.cmp(&b.y))
+            .group_by(|v| map[v.y as usize])
+            .into_iter()
+        {
+            for (offset, point) in group.enumerate() {
+                point.y = key + offset as isize;
+            }
+        }
     }
 
     calculate_load(points.as_slice(), height)
