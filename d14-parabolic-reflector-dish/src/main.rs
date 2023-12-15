@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
+use std::collections::HashMap;
+
 use nom::{bytes::complete::take, multi::many0, IResult, Parser};
 use nom_locate::LocatedSpan;
 #[allow(unused_imports)]
@@ -55,13 +57,45 @@ fn as_rock(span: Span) -> Rock {
     }
 }
 
-fn calculate_load(v: &[Rock], x: isize) -> usize {
-    let mut rocks = v.iter().filter(|r| r.point.x == x).collect::<Vec<_>>();
-    rocks.sort_by_key(|x| x.point.y);
+fn calculate_load(v: &[Rock], x: isize, h: isize) -> isize {
+    let rocks = v
+        .iter()
+        .filter(|r| r.point.x == x)
+        .map(|r| (r.point.y, r))
+        .collect::<HashMap<_, _>>();
+    let mut count = 0;
+    let mut weight = 0;
 
-    println!("{:?}", rocks);
+    for y in (0..=h).rev() {
+        if let Some(r) = rocks.get(&y) {
+            match r.rock {
+                RockType::Round => count += 1,
+                RockType::Unknown => todo!(),
+                RockType::Cube => {
+                    let mut m = h - y;
 
-    420
+                    for i in 0..count {
+                        println!("{} {} {}", x, y, m);
+                        weight += m;
+
+                        m -= 1;
+                    }
+                    count = 0;
+                }
+            }
+        }
+    }
+
+    let mut m = h + 1;
+
+    for i in 0..count {
+        println!("{} {}", x, m);
+        weight += m;
+
+        m -= 1;
+    }
+
+    weight
 }
 
 fn parse(s: Span) -> IResult<Span, Vec<Rock>> {
@@ -75,11 +109,12 @@ fn parse(s: Span) -> IResult<Span, Vec<Rock>> {
     ))
 }
 
-fn process(s: &str) -> usize {
+fn process(s: &str) -> isize {
     let (_, input) = parse(LocatedSpan::new(s)).unwrap();
     let width = input.iter().map(|r| r.point.x).max().unwrap();
+    let height = input.iter().map(|r| r.point.y).max().unwrap();
     (0..=width)
-        .map(|x| calculate_load(input.as_slice(), x))
+        .map(|x| calculate_load(input.as_slice(), x, height))
         .sum()
 }
 
