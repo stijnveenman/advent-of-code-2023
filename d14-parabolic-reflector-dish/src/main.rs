@@ -1,6 +1,8 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
+use std::collections::HashMap;
+
 use itertools::Itertools;
 use nom::{bytes::complete::take, multi::many0, IResult, Parser};
 use nom_locate::LocatedSpan;
@@ -17,7 +19,7 @@ fn main() {
 
 type Span<'a> = LocatedSpan<&'a str>;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 struct Point {
     x: isize,
     y: isize,
@@ -26,6 +28,10 @@ struct Point {
 impl Point {
     fn distance_to(&self, other: &Point) -> usize {
         self.x.abs_diff(other.x) + self.y.abs_diff(other.y)
+    }
+
+    fn xy(&self, h: isize) -> isize {
+        self.x + self.y * h
     }
 }
 
@@ -288,26 +294,39 @@ fn process2(s: &str) -> isize {
         .map(|r| r.point)
         .collect::<Vec<_>>();
 
-    for i in 0..3 {
-        println!("-- up -- {}", i);
+    let mut cache = HashMap::new();
+    let mut it_remaining = None;
+
+    for i in 0..1000000000 {
+        if i % 1000 == 0 {
+            println!("i {}", i)
+        }
         shift_up(points.as_mut_slice(), &up_maps);
-        draw(&points, &blocks);
-        println!();
-
-        println!("-- left -- {}", i);
         shift_left(points.as_mut_slice(), &left_maps);
-        draw(&points, &blocks);
-        println!();
-
-        println!("-- down -- {}", i);
         shift_down(points.as_mut_slice(), &down_maps);
-        draw(&points, &blocks);
-        println!();
-
-        println!("-- right -- {}", i);
         shift_right(points.as_mut_slice(), &right_maps);
-        draw(&points, &blocks);
-        println!();
+
+        if let Some(rem) = it_remaining {
+            it_remaining = Some(rem - 1);
+            if rem - 2 == 0 {
+                break;
+            }
+            println!("done at i {}", i);
+        } else {
+            let mut c = points.to_vec();
+            c.sort_by_key(|a| a.xy(height));
+            if let Some(idx) = cache.get(&c) {
+                println!("cache found {} {}", i, idx);
+                let loop_len = i - idx;
+                println!("loop size {}", loop_len);
+                let loop_remaining = 1000000000 - i;
+                println!("{} {}", loop_remaining, loop_remaining % loop_len);
+
+                it_remaining = Some(loop_remaining % loop_len);
+            } else {
+                cache.insert(c, i);
+            }
+        }
     }
 
     calculate_load(points.as_slice(), height)
