@@ -26,14 +26,14 @@ impl Point {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 enum RockType {
     Round,
     Cube,
     Unknown,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Rock {
     point: Point,
     rock: RockType,
@@ -57,14 +57,14 @@ fn as_rock(span: Span) -> Rock {
     }
 }
 
-fn calculate_load(v: &[Rock], x: isize, h: isize) -> isize {
+fn shift_up(v: &[Rock], x: isize, h: isize) -> Vec<Rock> {
     let rocks = v
         .iter()
         .filter(|r| r.point.x == x)
         .map(|r| (r.point.y, r))
         .collect::<HashMap<_, _>>();
     let mut count = 0;
-    let mut weight = 0;
+    let mut new_rocks = vec![];
 
     for y in (0..=h).rev() {
         if let Some(r) = rocks.get(&y) {
@@ -72,13 +72,8 @@ fn calculate_load(v: &[Rock], x: isize, h: isize) -> isize {
                 RockType::Round => count += 1,
                 RockType::Unknown => todo!(),
                 RockType::Cube => {
-                    let mut m = h - y;
-
                     for i in 0..count {
-                        println!("{} {} {}", x, y, m);
-                        weight += m;
-
-                        m -= 1;
+                        new_rocks.push(Rock::new(Point { x, y: y + i + 1 }, RockType::Round))
                     }
                     count = 0;
                 }
@@ -86,16 +81,26 @@ fn calculate_load(v: &[Rock], x: isize, h: isize) -> isize {
         }
     }
 
-    let mut m = h + 1;
-
     for i in 0..count {
-        println!("{} {}", x, m);
-        weight += m;
-
-        m -= 1;
+        println!("{} {}", x, i);
+        new_rocks.push(Rock::new(Point { x, y: i }, RockType::Round));
     }
 
-    weight
+    new_rocks.append(
+        &mut v
+            .iter()
+            .filter(|&x| x.rock == RockType::Cube)
+            .cloned()
+            .collect(),
+    );
+    new_rocks
+}
+
+fn calculate_load(v: &[Rock], h: isize) -> isize {
+    v.iter()
+        .filter(|r| r.rock == RockType::Round)
+        .map(|r| h + 1 - r.point.y)
+        .sum()
 }
 
 fn parse(s: Span) -> IResult<Span, Vec<Rock>> {
@@ -114,7 +119,8 @@ fn process(s: &str) -> isize {
     let width = input.iter().map(|r| r.point.x).max().unwrap();
     let height = input.iter().map(|r| r.point.y).max().unwrap();
     (0..=width)
-        .map(|x| calculate_load(input.as_slice(), x, height))
+        .map(|x| shift_up(input.as_slice(), x, height))
+        .map(|x| calculate_load(x.as_slice(), height))
         .sum()
 }
 
