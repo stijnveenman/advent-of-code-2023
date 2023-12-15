@@ -12,7 +12,7 @@ use util::*;
 fn main() {
     let input = include_str!("./input.txt");
 
-    println!("{}", process(input))
+    println!("{}", process2(input))
 }
 
 type Span<'a> = LocatedSpan<&'a str>;
@@ -83,7 +83,7 @@ fn build_shiftmap_up(v: &[Rock]) -> Vec<Vec<isize>> {
         .collect()
 }
 
-fn shift_up(points: &mut [Point], maps: Vec<Vec<isize>>) {
+fn shift_up(points: &mut [Point], maps: &[Vec<isize>]) {
     for (x, group) in &points
         .iter_mut()
         .sorted_by(|a, b| a.x.cmp(&b.x))
@@ -126,7 +126,7 @@ fn process(s: &str) -> isize {
         .map(|r| r.point)
         .collect::<Vec<_>>();
 
-    shift_up(points.as_mut_slice(), maps);
+    shift_up(points.as_mut_slice(), &maps);
 
     calculate_load(points.as_slice(), height)
 }
@@ -136,7 +136,22 @@ fn process2(s: &str) -> isize {
     let width = input.iter().map(|r| r.point.x).max().unwrap();
     let height = input.iter().map(|r| r.point.y).max().unwrap();
 
-    todo!()
+    let maps = build_shiftmap_up(input.as_slice());
+
+    let mut points = input
+        .into_iter()
+        .filter(|r| r.rock == RockType::Round)
+        .map(|r| r.point)
+        .collect::<Vec<_>>();
+
+    for i in 0..1000000 {
+        if i % 10 == 0 {
+            println!("{}", i);
+        }
+        shift_up(points.as_mut_slice(), &maps);
+    }
+
+    calculate_load(points.as_slice(), height)
 }
 
 static TEST_INPUT: &str = "O....#....
