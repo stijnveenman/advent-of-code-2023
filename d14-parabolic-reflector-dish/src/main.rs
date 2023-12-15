@@ -144,10 +144,13 @@ fn process2(s: &str) -> isize {
         .map(|r| r.point)
         .collect::<Vec<_>>();
 
-    for i in 0..1000000 {
+    for i in 0..1000 {
         if i % 10 == 0 {
             println!("{}", i);
         }
+        shift_up(points.as_mut_slice(), &maps);
+        shift_up(points.as_mut_slice(), &maps);
+        shift_up(points.as_mut_slice(), &maps);
         shift_up(points.as_mut_slice(), &maps);
     }
 
