@@ -102,6 +102,64 @@ fn build_shiftmap_up(v: &[Rock]) -> Vec<Vec<isize>> {
         })
         .collect()
 }
+fn draw(v: &[Point], b: &[Point]) {
+    let width = v.iter().map(|r| r.x).max().unwrap();
+    let height = v.iter().map(|r| r.y).max().unwrap();
+
+    for y in 0..=height {
+        for x in 0..=width {
+            if v.iter().any(|r| r.x == x && r.y == y) {
+                print!("O");
+            } else if b.iter().any(|r| r.x == x && r.y == y) {
+                print!("#");
+            } else {
+                print!(".");
+            }
+        }
+        println!();
+    }
+}
+
+fn build_shiftmap_left(v: &[Rock]) -> Vec<Vec<isize>> {
+    let width = v.iter().map(|r| r.point.x).max().unwrap();
+    let height = v.iter().map(|r| r.point.y).max().unwrap();
+
+    (0..=height)
+        .map(|y| {
+            (0..=width)
+                .map(|x| {
+                    v.iter()
+                        .filter(|r| r.rock == RockType::Cube)
+                        .filter(|r| r.point.y == y && r.point.x < x)
+                        .map(|r| r.point.x + 1)
+                        .max()
+                        .unwrap_or(0)
+                })
+                .collect()
+        })
+        .collect()
+}
+
+fn build_shiftmap_right(v: &[Rock]) -> Vec<Vec<isize>> {
+    let width = v.iter().map(|r| r.point.x).max().unwrap();
+    let height = v.iter().map(|r| r.point.y).max().unwrap();
+
+    (0..=height)
+        .map(|y| {
+            (0..=width)
+                .map(|x| {
+                    v.iter()
+                        .filter(|r| r.rock == RockType::Cube)
+                        .filter(|r| r.point.y == y && r.point.x > x)
+                        .map(|r| r.point.x - 1)
+                        .min()
+                        .unwrap_or(width)
+                })
+                .collect()
+        })
+        .collect()
+}
+
 fn shift_down(points: &mut [Point], maps: &[Vec<isize>]) {
     for (x, group) in &points
         .iter_mut()
@@ -116,6 +174,44 @@ fn shift_down(points: &mut [Point], maps: &[Vec<isize>]) {
         {
             for (offset, point) in group.enumerate() {
                 point.y = key - offset as isize;
+            }
+        }
+    }
+}
+
+fn shift_right(points: &mut [Point], maps: &[Vec<isize>]) {
+    for (y, group) in &points
+        .iter_mut()
+        .sorted_by(|a, b| a.y.cmp(&b.y))
+        .group_by(|r| r.y)
+    {
+        let map = &maps[y as usize];
+        for (key, group) in group
+            .sorted_by(|a, b| a.x.cmp(&b.x))
+            .group_by(|v| map[v.x as usize])
+            .into_iter()
+        {
+            for (offset, point) in group.enumerate() {
+                point.x = key - offset as isize;
+            }
+        }
+    }
+}
+
+fn shift_left(points: &mut [Point], maps: &[Vec<isize>]) {
+    for (y, group) in &points
+        .iter_mut()
+        .sorted_by(|a, b| a.y.cmp(&b.y))
+        .group_by(|r| r.y)
+    {
+        let map = &maps[y as usize];
+        for (key, group) in group
+            .sorted_by(|a, b| a.x.cmp(&b.x))
+            .group_by(|v| map[v.x as usize])
+            .into_iter()
+        {
+            for (offset, point) in group.enumerate() {
+                point.x = key + offset as isize;
             }
         }
     }
@@ -176,17 +272,42 @@ fn process2(s: &str) -> isize {
 
     let up_maps = build_shiftmap_up(input.as_slice());
     let down_maps = build_shiftmap_down(input.as_slice());
-    println!("{:?}", down_maps);
+    let right_maps = build_shiftmap_right(input.as_slice());
+    let left_maps = build_shiftmap_left(input.as_slice());
 
     let mut points = input
-        .into_iter()
-        .filter(|r| r.rock == RockType::Round)
+        .iter()
+        .filter(|&r| r.rock == RockType::Round)
+        .cloned()
         .map(|r| r.point)
         .collect::<Vec<_>>();
 
-    for i in 0..1000 {
+    let blocks = input
+        .into_iter()
+        .filter(|r| r.rock == RockType::Cube)
+        .map(|r| r.point)
+        .collect::<Vec<_>>();
+
+    for i in 0..3 {
+        println!("-- up -- {}", i);
         shift_up(points.as_mut_slice(), &up_maps);
-        shift_down(points.as_mut_slice(), &up_maps);
+        draw(&points, &blocks);
+        println!();
+
+        println!("-- left -- {}", i);
+        shift_left(points.as_mut_slice(), &left_maps);
+        draw(&points, &blocks);
+        println!();
+
+        println!("-- down -- {}", i);
+        shift_down(points.as_mut_slice(), &down_maps);
+        draw(&points, &blocks);
+        println!();
+
+        println!("-- right -- {}", i);
+        shift_right(points.as_mut_slice(), &right_maps);
+        draw(&points, &blocks);
+        println!();
     }
 
     calculate_load(points.as_slice(), height)
