@@ -96,6 +96,44 @@ fn shift_up(v: &[Rock], x: isize, h: isize) -> Vec<Rock> {
     new_rocks
 }
 
+fn shift_right(v: &[Rock], y: isize, w: isize) -> Vec<Rock> {
+    let rocks = v
+        .iter()
+        .filter(|r| r.point.y == y)
+        .map(|r| (r.point.x, r))
+        .collect::<HashMap<_, _>>();
+    let mut count = 0;
+    let mut new_rocks = vec![];
+
+    for x in (0..=w).rev() {
+        if let Some(r) = rocks.get(&x) {
+            match r.rock {
+                RockType::Round => count += 1,
+                RockType::Unknown => todo!(),
+                RockType::Cube => {
+                    for i in 0..count {
+                        new_rocks.push(Rock::new(Point { x: x - i - 1, y }, RockType::Round))
+                    }
+                    count = 0;
+                }
+            }
+        }
+    }
+
+    for i in 0..count {
+        new_rocks.push(Rock::new(Point { x: i, y }, RockType::Round));
+    }
+
+    new_rocks.append(
+        &mut v
+            .iter()
+            .filter(|&x| x.rock == RockType::Cube)
+            .cloned()
+            .collect(),
+    );
+    new_rocks
+}
+
 fn calculate_load(v: &[Rock], h: isize) -> isize {
     v.iter()
         .filter(|r| r.rock == RockType::Round)
@@ -124,11 +162,21 @@ fn process(s: &str) -> isize {
         .sum()
 }
 
-fn process2(s: &str) -> usize {
-    let (_, input) = parse(LocatedSpan::new(s)).unwrap();
-    println!("{:?}", input);
+fn process2(s: &str) -> isize {
+    let (_, mut input) = parse(LocatedSpan::new(s)).unwrap();
+    let width = input.iter().map(|r| r.point.x).max().unwrap();
+    let height = input.iter().map(|r| r.point.y).max().unwrap();
 
-    todo!()
+    for _ in 0..1000000000 {
+        input = (0..width)
+            .flat_map(|x| shift_up(input.as_slice(), x, height))
+            .collect();
+
+        input = (0..height)
+            .flat_map(|y| shift_right(input.as_slice(), y, width))
+            .collect();
+    }
+    calculate_load(input.as_slice(), height)
 }
 
 static TEST_INPUT: &str = "O....#....
