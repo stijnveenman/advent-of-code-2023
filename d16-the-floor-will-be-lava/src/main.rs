@@ -201,7 +201,7 @@ fn process2(s: &str) -> usize {
     let mut options = (0..height)
         .flat_map(|y| {
             vec![
-                (Point::new(0, y), Point::RIGHT),
+                (Point::new(-1, y), Point::RIGHT),
                 (Point::new(width, y), Point::LEFT),
             ]
         })
@@ -210,7 +210,7 @@ fn process2(s: &str) -> usize {
         &mut (0..width)
             .flat_map(|x| {
                 vec![
-                    (Point::new(x, 0), Point::DOWN),
+                    (Point::new(x, -1), Point::DOWN),
                     (Point::new(x, height), Point::UP),
                 ]
             })
