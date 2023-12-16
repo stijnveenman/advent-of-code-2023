@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
+use std::collections::HashSet;
 use std::ops::Add;
 use std::{collections::HashMap, ops::AddAssign};
 
@@ -63,6 +64,12 @@ impl Point {
                 return None;
             }
             return Some((Point::UP, Point::DOWN));
+        }
+        if tile == &TileType::SplitterHorizontal {
+            if self.y == 0 {
+                return None;
+            }
+            return Some((Point::LEFT, Point::RIGHT));
         }
 
         panic!("unimplemented!() split");
@@ -140,6 +147,7 @@ fn process(s: &str) -> usize {
     let height = input.iter().map(|x| x.0.y).max().unwrap() + 1;
 
     let mut remaining = vec![(Point::new(-1, 0), Point::RIGHT)];
+    let mut visited = HashSet::new();
 
     while let Some(p) = remaining.pop() {
         let mut dir = p.1;
@@ -148,12 +156,15 @@ fn process(s: &str) -> usize {
         while pos.bounded(width, height) {
             println!("{:?}", pos);
 
+            if visited.contains(&(pos, dir)) {
+                break;
+            }
+            visited.insert((pos, dir));
+
             if let Some(tile) = input.get(&pos) {
                 match tile {
-                    TileType::MirrorRight => dir = dir.reflect(tile),
-                    TileType::MirrorLeft => dir = dir.reflect(tile),
-                    TileType::SplitterHorizontal => (),
-                    TileType::SplitterVertical => {
+                    TileType::MirrorRight | TileType::MirrorLeft => dir = dir.reflect(tile),
+                    TileType::SplitterVertical | TileType::SplitterHorizontal => {
                         if let Some(split) = dir.split(tile) {
                             println!("{:?}", split);
                             remaining.push((pos, split.0));
@@ -169,7 +180,7 @@ fn process(s: &str) -> usize {
         }
     }
 
-    todo!()
+    visited.iter().map(|x| x.0).collect::<HashSet<_>>().len()
 }
 
 fn process2(s: &str) -> usize {
