@@ -10,26 +10,31 @@ fn main() {
     println!("{}", process(input))
 }
 
+fn count_diff(a: &str, b: &str) -> usize {
+    a.chars().zip(b.chars()).filter(|(a, b)| a != b).count()
+}
+
 fn check_horizontal(lines: &[&str], i: usize) -> bool {
     let mut j = 0;
+    let mut diff = 0;
 
     loop {
         let Some(idx) = i.checked_sub(1).and_then(|i| i.checked_sub(j)) else {
-            return true;
+            break;
         };
         let Some(bottom) = lines.get(idx) else {
-            return true;
+            break;
         };
         let Some(top) = lines.get(i + j) else {
-            return true;
+            break;
         };
 
-        if bottom != top {
-            return false;
-        }
+        diff += count_diff(top, bottom);
 
         j += 1;
     }
+
+    diff == 1
 }
 
 fn reflect(lines: &[&str]) -> Option<usize> {
@@ -37,7 +42,7 @@ fn reflect(lines: &[&str]) -> Option<usize> {
         let prev = lines[i - 1];
         let cur = lines[i];
 
-        if cur == prev && check_horizontal(lines, i) {
+        if count_diff(prev, cur) <= 1 && check_horizontal(lines, i) {
             return Some(i);
         }
     }
@@ -108,7 +113,7 @@ fn test_part1() {
 
 #[test]
 fn test_part2() {
-    let result = process2(TEST_INPUT);
+    let result = process(TEST_INPUT);
 
-    assert_eq!(dbg!(result), 0)
+    assert_eq!(dbg!(result), 400)
 }
