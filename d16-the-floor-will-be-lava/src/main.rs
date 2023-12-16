@@ -1,19 +1,23 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
+use rayon::prelude::*;
+
 use std::collections::HashSet;
 use std::ops::Add;
+use std::vec;
 use std::{collections::HashMap, ops::AddAssign};
 
 use nom::{bytes::complete::take, multi::many0, IResult, Parser};
 use nom_locate::LocatedSpan;
 mod util;
+use rayon::prelude::ParallelIterator;
 #[allow(unused_imports)]
 use util::*;
 
 fn main() {
     let input = include_str!("./input.txt");
 
-    println!("{}", process(input))
+    println!("{}", process2(input))
 }
 type Span<'a> = LocatedSpan<&'a str>;
 
@@ -141,12 +145,13 @@ fn parse(s: Span) -> IResult<Span, HashMap<Point, TileType>> {
     ))
 }
 
-fn process(s: &str) -> usize {
-    let (_, input) = parse(LocatedSpan::new(s)).unwrap();
-    let width = input.iter().map(|x| x.0.x).max().unwrap() + 1;
-    let height = input.iter().map(|x| x.0.y).max().unwrap() + 1;
-
-    let mut remaining = vec![(Point::new(-1, 0), Point::RIGHT)];
+fn calculate(
+    start: (Point, Point),
+    width: isize,
+    height: isize,
+    input: &HashMap<Point, TileType>,
+) -> usize {
+    let mut remaining = vec![start];
     let mut visited = HashSet::new();
 
     while let Some(p) = remaining.pop() {
@@ -154,8 +159,6 @@ fn process(s: &str) -> usize {
         let mut pos = p.0 + dir;
 
         while pos.bounded(width, height) {
-            println!("{:?}", pos);
-
             if visited.contains(&(pos, dir)) {
                 break;
             }
@@ -166,7 +169,6 @@ fn process(s: &str) -> usize {
                     TileType::MirrorRight | TileType::MirrorLeft => dir = dir.reflect(tile),
                     TileType::SplitterVertical | TileType::SplitterHorizontal => {
                         if let Some(split) = dir.split(tile) {
-                            println!("{:?}", split);
                             remaining.push((pos, split.0));
                             remaining.push((pos, split.1));
                             break;
@@ -183,11 +185,43 @@ fn process(s: &str) -> usize {
     visited.iter().map(|x| x.0).collect::<HashSet<_>>().len()
 }
 
+fn process(s: &str) -> usize {
+    let (_, input) = parse(LocatedSpan::new(s)).unwrap();
+    let width = input.iter().map(|x| x.0.x).max().unwrap() + 1;
+    let height = input.iter().map(|x| x.0.y).max().unwrap() + 1;
+
+    calculate((Point::new(-1, 0), Point::RIGHT), width, height, &input)
+}
+
 fn process2(s: &str) -> usize {
     let (_, input) = parse(LocatedSpan::new(s)).unwrap();
-    println!("{:?}", input);
+    let width = input.iter().map(|x| x.0.x).max().unwrap() + 1;
+    let height = input.iter().map(|x| x.0.y).max().unwrap() + 1;
 
-    todo!()
+    let mut options = (0..height)
+        .flat_map(|y| {
+            vec![
+                (Point::new(0, y), Point::RIGHT),
+                (Point::new(width, y), Point::LEFT),
+            ]
+        })
+        .collect::<Vec<_>>();
+    options.append(
+        &mut (0..width)
+            .flat_map(|x| {
+                vec![
+                    (Point::new(x, 0), Point::DOWN),
+                    (Point::new(x, height), Point::UP),
+                ]
+            })
+            .collect(),
+    );
+
+    options
+        .into_par_iter()
+        .map(|start| calculate(start, width, height, &input))
+        .max()
+        .unwrap()
 }
 
 static TEST_INPUT: &str = include_str!("./test-input.txt");
@@ -203,5 +237,5 @@ fn test_part1() {
 fn test_part2() {
     let result = process2(TEST_INPUT);
 
-    assert_eq!(dbg!(result), 0)
+    assert_eq!(dbg!(result), 51)
 }
