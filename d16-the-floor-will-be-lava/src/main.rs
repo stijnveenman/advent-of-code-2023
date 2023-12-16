@@ -56,6 +56,17 @@ impl Point {
 
         panic!("unimplemented mirror");
     }
+
+    fn split(&self, tile: &TileType) -> Option<(Point, Point)> {
+        if tile == &TileType::SplitterVertical {
+            if self.x == 0 {
+                return None;
+            }
+            return Some((Point::UP, Point::DOWN));
+        }
+
+        panic!("unimplemented!() split");
+    }
 }
 
 impl AddAssign<Point> for Point {
@@ -128,23 +139,34 @@ fn process(s: &str) -> usize {
     let width = input.iter().map(|x| x.0.x).max().unwrap() + 1;
     let height = input.iter().map(|x| x.0.y).max().unwrap() + 1;
 
-    let mut pos = Point::new(0, 0);
-    let mut dir = Point::RIGHT;
+    let mut remaining = vec![(Point::new(-1, 0), Point::RIGHT)];
 
-    while pos.bounded(width, height) {
-        println!("{:?}", pos);
+    while let Some(p) = remaining.pop() {
+        let mut dir = p.1;
+        let mut pos = p.0 + dir;
 
-        if let Some(tile) = input.get(&pos) {
-            match tile {
-                TileType::MirrorRight => dir = dir.reflect(tile),
-                TileType::MirrorLeft => dir = dir.reflect(tile),
-                TileType::SplitterHorizontal => (),
-                TileType::SplitterVertical => (),
-                TileType::Unknown => (),
+        while pos.bounded(width, height) {
+            println!("{:?}", pos);
+
+            if let Some(tile) = input.get(&pos) {
+                match tile {
+                    TileType::MirrorRight => dir = dir.reflect(tile),
+                    TileType::MirrorLeft => dir = dir.reflect(tile),
+                    TileType::SplitterHorizontal => (),
+                    TileType::SplitterVertical => {
+                        if let Some(split) = dir.split(tile) {
+                            println!("{:?}", split);
+                            remaining.push((pos, split.0));
+                            remaining.push((pos, split.1));
+                            break;
+                        };
+                    }
+                    TileType::Unknown => (),
+                }
             }
-        }
 
-        pos += dir;
+            pos += dir;
+        }
     }
 
     todo!()
