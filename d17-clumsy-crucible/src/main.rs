@@ -19,13 +19,13 @@ static TEST_INPUT: &str = "2413432311323
 1224686865563
 2546548887735
 4322674655533";
-static TEST_PART1_RESULT: usize = 102;
+static TEST_PART1_RESULT: u32 = 102;
 static TEST_PART2_RESULT: usize = 420;
 
 fn main() {
-    //let input = include_str!("./input.txt");
+    let input = include_str!("./input.txt");
 
-    println!("{}", process(TEST_INPUT))
+    println!("{}", process(input))
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Copy, Hash)]
@@ -49,12 +49,12 @@ impl Node {
             Node::new(
                 self.point + self.direction.rotate(1),
                 self.direction.rotate(1),
-                3,
+                2,
             ),
             Node::new(
                 self.point + self.direction.rotate(-1),
                 self.direction.rotate(-1),
-                3,
+                2,
             ),
         ];
 
@@ -70,30 +70,23 @@ impl Node {
     }
 }
 
-fn process(s: &str) -> usize {
+fn process(s: &str) -> u32 {
     let grid = CharGrid::new(s, |c| c.to_digit(10));
 
     let mut open_set: HashMap<Node, u32> = HashMap::new();
     let mut closed_set: HashMap<Node, u32> = HashMap::new();
 
-    open_set.insert(
-        Node::new(Point::new(0, 0), Point::RIGHT, 2),
-        *grid.get_xy(0, 0).unwrap(),
-    );
+    open_set.insert(Node::new(Point::new(0, 0), Point::RIGHT, 2), 0);
     let goal = grid.upper();
 
     loop {
         let Some(s) = open_set.iter().sorted_by_key(|x| x.1).next() else {
-            break;
+            panic!("didnt find goal");
         };
 
         let current = *s.0;
         let value = *s.1;
         //println!("exploring {:?} {}", current, value);
-
-        if closed_set.contains_key(&current) {
-            continue;
-        }
 
         for neighbour in current
             .neighbours()
@@ -113,18 +106,23 @@ fn process(s: &str) -> usize {
                 }
             }
 
+            if let Some(cur_val) = open_set.get(&neighbour) {
+                if *cur_val <= neighbour_val {
+                    continue;
+                }
+            }
+
             open_set.insert(neighbour, value + val);
         }
 
         if current.point == goal {
             println!("found goal {}", value);
+            return value;
         }
 
         open_set.remove(&current);
         closed_set.insert(current, value);
     }
-
-    todo!()
 }
 
 fn process2(s: &str) -> usize {
