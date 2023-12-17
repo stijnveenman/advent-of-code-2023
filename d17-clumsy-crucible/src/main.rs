@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use std::collections::HashMap;
+use std::{collections::HashMap, hash::Hash};
 
 use aoc_toolbox::{char_grid::CharGrid, point::Point};
 use itertools::Itertools;
@@ -28,13 +28,58 @@ fn main() {
     println!("{}", process(TEST_INPUT))
 }
 
+#[derive(PartialEq, Eq, Debug, Clone, Copy, Hash)]
+struct Node {
+    point: Point,
+    direction: Point,
+    remaining: u32,
+}
+
+impl Node {
+    fn new(point: Point, direction: Point, remaining: u32) -> Node {
+        Node {
+            point,
+            direction,
+            remaining,
+        }
+    }
+
+    fn neighbours(&self) -> Vec<Node> {
+        let mut v = vec![
+            Node::new(
+                self.point + self.direction.rotate(1),
+                self.direction.rotate(1),
+                3,
+            ),
+            Node::new(
+                self.point + self.direction.rotate(-1),
+                self.direction.rotate(-1),
+                3,
+            ),
+        ];
+
+        if self.remaining > 0 {
+            v.push(Node::new(
+                self.point + self.direction,
+                self.direction,
+                self.remaining - 1,
+            ))
+        }
+
+        v
+    }
+}
+
 fn process(s: &str) -> usize {
     let grid = CharGrid::new(s, |c| c.to_digit(10));
 
-    let mut open_set = HashMap::new();
-    let mut closed_set = HashMap::new();
+    let mut open_set: HashMap<Node, u32> = HashMap::new();
+    let mut closed_set: HashMap<Node, u32> = HashMap::new();
 
-    open_set.insert(Point::new(0, 0), *grid.get_xy(0, 0).unwrap());
+    open_set.insert(
+        Node::new(Point::new(0, 0), Point::RIGHT, 2),
+        *grid.get_xy(0, 0).unwrap(),
+    );
     let goal = grid.upper();
 
     loop {
@@ -44,7 +89,7 @@ fn process(s: &str) -> usize {
 
         let current = *s.0;
         let value = *s.1;
-        println!("exploring {:?}", current);
+        //println!("exploring {:?} {}", current, value);
 
         if closed_set.contains_key(&current) {
             continue;
@@ -53,9 +98,9 @@ fn process(s: &str) -> usize {
         for neighbour in current
             .neighbours()
             .into_iter()
-            .filter(|p| grid.is_within(p))
+            .filter(|p| grid.is_within(&p.point))
         {
-            let Some(val) = grid.get(&neighbour) else {
+            let Some(val) = grid.get(&neighbour.point) else {
                 println!("failed to get point {:?}", neighbour);
                 continue;
             };
@@ -71,13 +116,12 @@ fn process(s: &str) -> usize {
             open_set.insert(neighbour, value + val);
         }
 
+        if current.point == goal {
+            println!("found goal {}", value);
+        }
+
         open_set.remove(&current);
         closed_set.insert(current, value);
-
-        if current == goal {
-            println!("found goal {}", value);
-            break;
-        }
     }
 
     todo!()

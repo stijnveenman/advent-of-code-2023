@@ -29,6 +29,13 @@ impl Point {
             *self + Point::LEFT,
         ]
     }
+
+    pub fn rotate(&self, direction: isize) -> Point {
+        Point {
+            x: self.y * direction,
+            y: self.x * direction,
+        }
+    }
 }
 
 impl AddAssign<Point> for Point {

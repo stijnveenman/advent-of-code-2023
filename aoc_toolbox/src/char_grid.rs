@@ -16,10 +16,10 @@ impl<T> CharGrid<T> {
         let map = s
             .lines()
             .enumerate()
-            .flat_map(|(x, line)| {
+            .flat_map(|(y, line)| {
                 line.chars()
                     .enumerate()
-                    .map(move |(y, c)| Some((Point::new(x as isize, y as isize), parse_char(c)?)))
+                    .map(move |(x, c)| Some((Point::new(x as isize, y as isize), parse_char(c)?)))
             })
             .flatten()
             .collect();
