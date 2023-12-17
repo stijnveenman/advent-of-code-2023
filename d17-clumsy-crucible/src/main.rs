@@ -19,50 +19,63 @@ static TEST_INPUT: &str = "2413432311323
 1224686865563
 2546548887735
 4322674655533";
+static TEST_INPUT2: &str = "111111111111
+999999999991
+999999999991
+999999999991
+999999999991";
 static TEST_PART1_RESULT: u32 = 102;
 static TEST_PART2_RESULT: usize = 420;
 
 fn main() {
     let input = include_str!("./input.txt");
 
-    println!("{}", process(input))
+    println!("{}", process(TEST_INPUT2))
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Copy, Hash)]
 struct Node {
     point: Point,
     direction: Point,
-    remaining: u32,
+    steps: u32,
 }
 
 impl Node {
-    fn new(point: Point, direction: Point, remaining: u32) -> Node {
+    fn new(point: Point, direction: Point, steps: u32) -> Node {
         Node {
             point,
             direction,
-            remaining,
+            steps,
         }
     }
 
     fn neighbours(&self) -> Vec<Node> {
+        if self.steps < 4 {
+            return vec![Node::new(
+                self.point + self.direction,
+                self.direction,
+                self.steps + 1,
+            )];
+        }
+
         let mut v = vec![
             Node::new(
                 self.point + self.direction.rotate(1),
                 self.direction.rotate(1),
-                2,
+                1,
             ),
             Node::new(
                 self.point + self.direction.rotate(-1),
                 self.direction.rotate(-1),
-                2,
+                1,
             ),
         ];
 
-        if self.remaining > 0 {
+        if self.steps < 10 {
             v.push(Node::new(
                 self.point + self.direction,
                 self.direction,
-                self.remaining - 1,
+                self.steps + 1,
             ))
         }
 
@@ -76,7 +89,8 @@ fn process(s: &str) -> u32 {
     let mut open_set: HashMap<Node, u32> = HashMap::new();
     let mut closed_set: HashMap<Node, u32> = HashMap::new();
 
-    open_set.insert(Node::new(Point::new(0, 0), Point::RIGHT, 2), 0);
+    open_set.insert(Node::new(Point::new(0, 0), Point::RIGHT, 1), 0);
+    open_set.insert(Node::new(Point::new(0, 0), Point::DOWN, 1), 0);
     let goal = grid.upper();
 
     loop {
@@ -115,8 +129,8 @@ fn process(s: &str) -> u32 {
             open_set.insert(neighbour, value + val);
         }
 
-        if current.point == goal {
-            println!("found goal {}", value);
+        if current.point == goal && current.steps >= 4 {
+            println!("found goal {} {:?}", value, current.steps);
             return value;
         }
 
