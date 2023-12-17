@@ -30,7 +30,7 @@ static TEST_PART2_RESULT: usize = 420;
 fn main() {
     let input = include_str!("./input.txt");
 
-    println!("{}", process(TEST_INPUT2))
+    println!("{}", process(input))
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Copy, Hash)]
@@ -89,8 +89,8 @@ fn process(s: &str) -> u32 {
     let mut open_set: HashMap<Node, u32> = HashMap::new();
     let mut closed_set: HashMap<Node, u32> = HashMap::new();
 
-    open_set.insert(Node::new(Point::new(0, 0), Point::RIGHT, 1), 0);
-    open_set.insert(Node::new(Point::new(0, 0), Point::DOWN, 1), 0);
+    open_set.insert(Node::new(Point::new(0, 0), Point::RIGHT, 0), 0);
+    open_set.insert(Node::new(Point::new(0, 0), Point::DOWN, 0), 0);
     let goal = grid.upper();
 
     loop {
