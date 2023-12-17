@@ -1,7 +1,10 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use aoc_toolbox::char_grid::CharGrid;
+use std::collections::HashMap;
+
+use aoc_toolbox::{char_grid::CharGrid, point::Point};
+use itertools::Itertools;
 
 static TEST_INPUT: &str = "2413432311323
 3215453535623
@@ -20,14 +23,62 @@ static TEST_PART1_RESULT: usize = 102;
 static TEST_PART2_RESULT: usize = 420;
 
 fn main() {
-    let input = include_str!("./input.txt");
+    //let input = include_str!("./input.txt");
 
-    println!("{}", process(input))
+    println!("{}", process(TEST_INPUT))
 }
 
 fn process(s: &str) -> usize {
     let grid = CharGrid::new(s, |c| c.to_digit(10));
-    println!("{:?}", grid.get_xy(0, 1));
+
+    let mut open_set = HashMap::new();
+    let mut closed_set = HashMap::new();
+
+    open_set.insert(Point::new(0, 0), *grid.get_xy(0, 0).unwrap());
+    let goal = grid.upper();
+
+    loop {
+        let Some(s) = open_set.iter().sorted_by_key(|x| x.1).next() else {
+            break;
+        };
+
+        let current = *s.0;
+        let value = *s.1;
+        println!("exploring {:?}", current);
+
+        if closed_set.contains_key(&current) {
+            continue;
+        }
+
+        for neighbour in current
+            .neighbours()
+            .into_iter()
+            .filter(|p| grid.is_within(p))
+        {
+            let Some(val) = grid.get(&neighbour) else {
+                println!("failed to get point {:?}", neighbour);
+                continue;
+            };
+
+            let neighbour_val = value + val;
+
+            if let Some(cur_val) = closed_set.get(&neighbour) {
+                if *cur_val <= neighbour_val {
+                    continue;
+                }
+            }
+
+            open_set.insert(neighbour, value + val);
+        }
+
+        open_set.remove(&current);
+        closed_set.insert(current, value);
+
+        if current == goal {
+            println!("found goal {}", value);
+            break;
+        }
+    }
 
     todo!()
 }

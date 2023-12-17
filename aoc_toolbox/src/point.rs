@@ -1,7 +1,7 @@
 use std::ops::Add;
 use std::ops::AddAssign;
 
-#[derive(Debug, Hash, PartialEq, Eq)]
+#[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
 pub struct Point {
     pub x: isize,
     pub y: isize,
@@ -19,6 +19,15 @@ impl Point {
 
     pub fn is_within(&self, lower: &Point, upper: &Point) -> bool {
         self.x >= lower.x && self.y >= lower.y && self.x <= upper.x && self.y <= upper.y
+    }
+
+    pub fn neighbours(&self) -> Vec<Point> {
+        vec![
+            *self + Point::UP,
+            *self + Point::RIGHT,
+            *self + Point::DOWN,
+            *self + Point::LEFT,
+        ]
     }
 }
 

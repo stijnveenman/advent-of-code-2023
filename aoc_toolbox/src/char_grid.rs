@@ -26,8 +26,8 @@ impl<T> CharGrid<T> {
 
         let lower = Point::new(0, 0);
         let upper = Point::new(
-            s.lines().next().unwrap().len() as isize,
-            s.lines().count() as isize,
+            s.lines().next().unwrap().len() as isize - 1,
+            s.lines().count() as isize - 1,
         );
 
         CharGrid { map, lower, upper }
@@ -51,5 +51,13 @@ impl<T> CharGrid<T> {
 
     pub fn iter(&self) -> impl Iterator<Item = (&Point, &T)> {
         self.map.iter()
+    }
+
+    pub fn lower(&self) -> Point {
+        self.lower
+    }
+
+    pub fn upper(&self) -> Point {
+        self.upper
     }
 }
