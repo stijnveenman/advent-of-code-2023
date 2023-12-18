@@ -8,7 +8,7 @@ use util::*;
 fn main() {
     let input = include_str!("./input.txt");
 
-    println!("{}", process(input))
+    println!("{}", process2(TEST_INPUT))
 }
 
 fn parse(s: &str) -> Vec<LineItem> {
@@ -19,6 +19,37 @@ fn parse(s: &str) -> Vec<LineItem> {
                 dir: i.next().unwrap().chars().next().unwrap(),
                 count: i.next().unwrap().parse().unwrap(),
                 hex: i.next().unwrap().replace(['(', ')'], ""),
+            }
+        })
+        .collect()
+}
+
+fn parse2(s: &str) -> Vec<LineItem> {
+    s.lines()
+        .map(|l| {
+            let mut i = l.split(' ');
+            LineItem {
+                dir: i.next().unwrap().chars().next().unwrap(),
+                count: i.next().unwrap().parse().unwrap(),
+                hex: i.next().unwrap().replace(['(', ')'], ""),
+            }
+        })
+        .map(|item| {
+            let dir = match &item.hex[item.hex.len() - 1..] {
+                "0" => 'R',
+                "1" => 'D',
+                "2" => 'L',
+                "3" => 'U',
+                _ => panic!("dir"),
+            };
+
+            let hex = isize::from_str_radix(&item.hex[1..item.hex.len() - 1], 16).unwrap();
+
+            println!("{} {}", dir, hex);
+            LineItem {
+                dir,
+                count: hex,
+                hex: item.hex,
             }
         })
         .collect()
@@ -120,7 +151,29 @@ fn process(s: &str) -> usize {
 }
 
 fn process2(s: &str) -> usize {
-    todo!()
+    let input = parse2(s);
+    let mut grid = CharGrid::new("", |c| Some(""));
+
+    let mut current = Point::new(0, 0);
+    for item in input.iter() {
+        let (next_points, next) = item.steps(&current);
+        current = next;
+
+        next_points.into_iter().for_each(|p| {
+            grid.set(p, item.hex.as_ref());
+        })
+    }
+
+    grid.recalculate_bounds();
+
+    let inside = find_inside(&grid).unwrap();
+    println!("{:?}", inside);
+
+    grid.floodfill(&inside, "");
+
+    println!("done");
+
+    grid.points().count()
 }
 
 static TEST_INPUT: &str = "R 6 (#70c710)
