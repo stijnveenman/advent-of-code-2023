@@ -11,13 +11,6 @@ fn main() {
     println!("{}", process(input))
 }
 
-#[derive(Debug)]
-struct LineItem {
-    dir: char,
-    count: usize,
-    hex: String,
-}
-
 fn parse(s: &str) -> Vec<LineItem> {
     s.lines()
         .map(|l| {
@@ -31,14 +24,67 @@ fn parse(s: &str) -> Vec<LineItem> {
         .collect()
 }
 
+#[derive(Debug)]
+struct LineItem {
+    dir: char,
+    count: isize,
+    hex: String,
+}
+
+impl LineItem {
+    fn steps(&self, p: &Point) -> (Vec<Point>, Point) {
+        match self.dir {
+            'R' => {
+                let v = (p.x..=p.x + self.count)
+                    .map(|x| Point::new(x, p.y))
+                    .collect();
+                let n = Point::new(p.x + self.count, p.y);
+                (v, n)
+            }
+            'L' => {
+                let v = (p.x - self.count..=p.x)
+                    .map(|x| Point::new(x, p.y))
+                    .collect();
+                let n = Point::new(p.x - self.count, p.y);
+                (v, n)
+            }
+            'D' => {
+                let v = (p.y..=p.y + self.count)
+                    .map(|y| Point::new(p.x, y))
+                    .collect();
+                let n = Point::new(p.x, p.y + self.count);
+                (v, n)
+            }
+            'U' => {
+                let v = (p.y - self.count..=p.y)
+                    .map(|y| Point::new(p.x, y))
+                    .collect();
+                let n = Point::new(p.x, p.y - self.count);
+                (v, n)
+            }
+
+            _ => panic!("shouldnt reach"),
+        }
+    }
+}
+
 fn process(s: &str) -> usize {
     let input = parse(s);
     let mut grid = CharGrid::new("", |c| Some(""));
 
-    grid.set(Point::new(2, 2), "");
-    grid.recalculate_bounds();
+    let mut current = Point::new(0, 0);
+    for item in input.iter() {
+        let (next_points, next) = item.steps(&current);
+        current = next;
+        println!("{:?}", (item, &next_points));
 
-    println!("{:?}", grid.upper());
+        next_points.into_iter().for_each(|p| {
+            grid.set(p, item.hex.as_ref());
+        })
+    }
+
+    grid.recalculate_bounds();
+    grid.draw_existing();
 
     todo!()
 }

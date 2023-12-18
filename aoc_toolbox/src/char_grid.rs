@@ -62,10 +62,6 @@ impl<T> CharGrid<T> {
     }
 
     pub fn recalculate_bounds(&mut self) {
-        self.lower = Point::new(
-            self.map.keys().map(|p| p.x).min().unwrap(),
-            self.map.keys().map(|p| p.y).min().unwrap(),
-        );
         self.upper = Point::new(
             self.map.keys().map(|p| p.x).max().unwrap(),
             self.map.keys().map(|p| p.y).max().unwrap(),
@@ -74,5 +70,29 @@ impl<T> CharGrid<T> {
 
     pub fn set(&mut self, p: Point, item: T) {
         self.map.insert(p, item);
+    }
+
+    pub fn draw<F>(&self, f: F)
+    where
+        F: Fn(&Point, Option<&T>) -> char,
+    {
+        let lower = self.lower();
+        let upper = self.upper();
+
+        for y in lower.y..=upper.y {
+            for x in lower.x..=upper.x {
+                let p = Point::new(x, y);
+                let c = f(&p, self.get(&p));
+                print!("{}", c);
+            }
+            println!();
+        }
+    }
+
+    pub fn draw_existing(&self) {
+        self.draw(|_, s| match s {
+            Some(_) => '#',
+            None => '.',
+        });
     }
 }
