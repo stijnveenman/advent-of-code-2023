@@ -115,3 +115,12 @@ impl<T> CharGrid<T> {
         });
     }
 }
+
+impl CharGrid<char> {
+    pub fn draw_char(&self) {
+        self.draw(|_, s| match s {
+            Some(s) => *s,
+            None => '.',
+        })
+    }
+}

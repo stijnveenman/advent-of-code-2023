@@ -1,14 +1,15 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 mod util;
-use aoc_toolbox::{char_grid::CharGrid, point::Point};
+
+use aoc_toolbox::{char_grid::CharGrid, point::Point, shoelace::shoelace};
 #[allow(unused_imports)]
 use util::*;
 
 fn main() {
     let input = include_str!("./input.txt");
 
-    println!("{}", process2(TEST_INPUT))
+    println!("{}", process2(input))
 }
 
 fn parse(s: &str) -> Vec<LineItem> {
@@ -45,7 +46,6 @@ fn parse2(s: &str) -> Vec<LineItem> {
 
             let hex = isize::from_str_radix(&item.hex[1..item.hex.len() - 1], 16).unwrap();
 
-            println!("{} {}", dir, hex);
             LineItem {
                 dir,
                 count: hex,
@@ -97,6 +97,16 @@ impl LineItem {
             _ => panic!("shouldnt reach"),
         }
     }
+
+    fn next(&self, p: &Point) -> (Point, char) {
+        match self.dir {
+            'R' => (Point::new(p.x + self.count, p.y), self.dir),
+            'L' => (Point::new(p.x - self.count, p.y), self.dir),
+            'U' => (Point::new(p.x, p.y - self.count), self.dir),
+            'D' => (Point::new(p.x, p.y + self.count), self.dir),
+            _ => panic!(),
+        }
+    }
 }
 
 fn find_inside<T>(grid: &CharGrid<T>) -> Option<Point> {
@@ -124,56 +134,45 @@ fn find_inside<T>(grid: &CharGrid<T>) -> Option<Point> {
     None
 }
 
-fn process(s: &str) -> usize {
+fn process(s: &str) -> isize {
     let input = parse(s);
-    let mut grid = CharGrid::new("", |c| Some(""));
 
     let mut current = Point::new(0, 0);
-    for item in input.iter() {
-        let (next_points, next) = item.steps(&current);
-        current = next;
+    let mut points = vec![];
 
-        next_points.into_iter().for_each(|p| {
-            grid.set(p, item.hex.as_ref());
-        })
+    let len = input.iter().map(|x| x.count).sum::<isize>();
+    println!("{:?}", len);
+    for item in input {
+        let (next, dir) = item.next(&current);
+
+        points.push(current);
+
+        current = next;
     }
 
-    grid.recalculate_bounds();
-    grid.draw_existing();
+    println!("{:?}", points);
 
-    let inside = find_inside(&grid).unwrap();
-    println!("{:?}", inside);
-
-    grid.floodfill(&inside, "");
-    grid.draw_existing();
-
-    grid.points().count()
+    shoelace(&points) + (len / 2) + 1
 }
 
-fn process2(s: &str) -> usize {
+fn process2(s: &str) -> isize {
     let input = parse2(s);
-    let mut grid = CharGrid::new("", |c| Some(""));
-
     let mut current = Point::new(0, 0);
-    for item in input.iter() {
-        let (next_points, next) = item.steps(&current);
-        current = next;
+    let mut points = vec![];
 
-        next_points.into_iter().for_each(|p| {
-            grid.set(p, item.hex.as_ref());
-        })
+    let len = input.iter().map(|x| x.count).sum::<isize>();
+    println!("{:?}", len);
+    for item in input {
+        let (next, dir) = item.next(&current);
+
+        points.push(current);
+
+        current = next;
     }
 
-    grid.recalculate_bounds();
+    println!("{:?}", points);
 
-    let inside = find_inside(&grid).unwrap();
-    println!("{:?}", inside);
-
-    grid.floodfill(&inside, "");
-
-    println!("done");
-
-    grid.points().count()
+    shoelace(&points) + (len / 2) + 1
 }
 
 static TEST_INPUT: &str = "R 6 (#70c710)
@@ -202,5 +201,5 @@ fn test_part1() {
 fn test_part2() {
     let result = process2(TEST_INPUT);
 
-    assert_eq!(dbg!(result), 0)
+    assert_eq!(dbg!(result), 952408144115)
 }
