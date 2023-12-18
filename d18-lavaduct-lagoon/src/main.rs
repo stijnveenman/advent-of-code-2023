@@ -68,6 +68,31 @@ impl LineItem {
     }
 }
 
+fn find_inside<T>(grid: &CharGrid<T>) -> Option<Point> {
+    let upper = grid.upper();
+
+    for y in 0..=upper.y {
+        let mut crossings = 0;
+        for x in 0..upper.x {
+            match grid.get_xy(x, y) {
+                Some(_) => {
+                    crossings += 1;
+                    if crossings > 1 {
+                        break;
+                    }
+                }
+                None => {
+                    if crossings == 1 {
+                        return Some(Point::new(x, y));
+                    }
+                }
+            }
+        }
+    }
+
+    None
+}
+
 fn process(s: &str) -> usize {
     let input = parse(s);
     let mut grid = CharGrid::new("", |c| Some(""));
@@ -76,7 +101,6 @@ fn process(s: &str) -> usize {
     for item in input.iter() {
         let (next_points, next) = item.steps(&current);
         current = next;
-        println!("{:?}", (item, &next_points));
 
         next_points.into_iter().for_each(|p| {
             grid.set(p, item.hex.as_ref());
@@ -86,7 +110,13 @@ fn process(s: &str) -> usize {
     grid.recalculate_bounds();
     grid.draw_existing();
 
-    todo!()
+    let inside = find_inside(&grid).unwrap();
+    println!("{:?}", inside);
+
+    grid.floodfill(&inside, "");
+    grid.draw_existing();
+
+    grid.points().count()
 }
 
 fn process2(s: &str) -> usize {

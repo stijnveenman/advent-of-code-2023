@@ -1,4 +1,7 @@
-use std::collections::HashMap;
+use std::{
+    collections::{HashMap, HashSet},
+    hash::Hash,
+};
 
 use crate::point::Point;
 
@@ -70,6 +73,25 @@ impl<T> CharGrid<T> {
 
     pub fn set(&mut self, p: Point, item: T) {
         self.map.insert(p, item);
+    }
+
+    pub fn floodfill(&mut self, from: &Point, with: T)
+    where
+        T: Copy,
+    {
+        let mut togo = vec![*from];
+
+        while let Some(current) = togo.pop() {
+            self.set(current, with);
+
+            for n in current.neighbours() {
+                if self.get(&n).is_some() {
+                    continue;
+                }
+
+                togo.push(n);
+            }
+        }
     }
 
     pub fn draw<F>(&self, f: F)
