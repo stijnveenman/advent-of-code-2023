@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 mod util;
+use aoc_toolbox::{char_grid::CharGrid, point::Point};
 #[allow(unused_imports)]
 use util::*;
 
@@ -32,7 +33,12 @@ fn parse(s: &str) -> Vec<LineItem> {
 
 fn process(s: &str) -> usize {
     let input = parse(s);
-    println!("{:?}", input);
+    let mut grid = CharGrid::new("", |c| Some(""));
+
+    grid.set(Point::new(2, 2), "");
+    grid.recalculate_bounds();
+
+    println!("{:?}", grid.upper());
 
     todo!()
 }

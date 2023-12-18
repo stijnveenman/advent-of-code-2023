@@ -26,7 +26,7 @@ impl<T> CharGrid<T> {
 
         let lower = Point::new(0, 0);
         let upper = Point::new(
-            s.lines().next().unwrap().len() as isize - 1,
+            s.lines().next().unwrap_or("").len() as isize - 1,
             s.lines().count() as isize - 1,
         );
 
@@ -59,5 +59,20 @@ impl<T> CharGrid<T> {
 
     pub fn upper(&self) -> Point {
         self.upper
+    }
+
+    pub fn recalculate_bounds(&mut self) {
+        self.lower = Point::new(
+            self.map.keys().map(|p| p.x).min().unwrap(),
+            self.map.keys().map(|p| p.y).min().unwrap(),
+        );
+        self.upper = Point::new(
+            self.map.keys().map(|p| p.x).max().unwrap(),
+            self.map.keys().map(|p| p.y).max().unwrap(),
+        );
+    }
+
+    pub fn set(&mut self, p: Point, item: T) {
+        self.map.insert(p, item);
     }
 }
