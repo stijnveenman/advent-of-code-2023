@@ -23,8 +23,8 @@ hdj{m>838:A,pv}
 {x=2036,m=264,a=79,s=2244}
 {x=2461,m=1339,a=466,s=291}
 {x=2127,m=1623,a=2188,s=1013}";
-static TEST_PART1_RESULT: usize = 420;
-static TEST_PART2_RESULT: usize = 420;
+static TEST_PART1_RESULT: isize = 19114;
+static TEST_PART2_RESULT: isize = 420;
 
 fn main() {
     let input = include_str!("./input.txt");
@@ -36,7 +36,7 @@ fn main() {
 struct WorkflowStep {
     item: char,
     action: char,
-    number: isize,
+    value: isize,
     next: String,
 }
 
@@ -47,7 +47,9 @@ struct Workflow {
     otherwise: String,
 }
 
-fn parse(s: &str) -> (HashMap<String, Workflow>, Vec<HashMap<char, isize>>) {
+type Item = HashMap<char, isize>;
+
+fn parse(s: &str) -> (HashMap<String, Workflow>, Vec<Item>) {
     let (workflows, items) = s.split_once("\n\n").unwrap();
 
     let workflows = workflows
@@ -61,11 +63,16 @@ fn parse(s: &str) -> (HashMap<String, Workflow>, Vec<HashMap<char, isize>>) {
                 .map(|s| WorkflowStep {
                     item: s.chars().next().unwrap(),
                     action: s.chars().nth(1).unwrap(),
-                    number: s[2..].split_once(':').unwrap().0.parse().unwrap(),
+                    value: s[2..].split_once(':').unwrap().0.parse().unwrap(),
                     next: s.split_once(':').unwrap().1.to_string(),
                 })
                 .collect();
-            let otherwise = steps_s.split(',').last().unwrap().to_string();
+            let otherwise = steps_s
+                .split(',')
+                .last()
+                .unwrap()
+                .to_string()
+                .replace('}', "");
 
             Workflow {
                 steps,
@@ -90,15 +97,52 @@ fn parse(s: &str) -> (HashMap<String, Workflow>, Vec<HashMap<char, isize>>) {
     (workflows, items)
 }
 
-fn process(s: &str) -> usize {
-    let (workflows, items) = parse(s);
-    println!("{:?}", workflows);
-    println!("{:?}", items);
+fn run_workflows(workflows: &HashMap<String, Workflow>, item: &Item) -> bool {
+    let mut current = workflows.get("in").unwrap();
 
-    todo!()
+    loop {
+        println!("{:?}", current);
+        for step in current.steps.iter() {
+            let val = *item.get(&step.item).unwrap();
+
+            let matching = match step.action {
+                '<' => val < step.value,
+                '>' => val > step.value,
+                a => panic!("unknown action {}", a),
+            };
+
+            if !matching {
+                continue;
+            }
+
+            match step.next.as_str() {
+                "A" => return true,
+                "R" => return false,
+
+                next => current = workflows.get(next).unwrap(),
+            }
+        }
+
+        match current.otherwise.as_str() {
+            "A" => return true,
+            "R" => return false,
+
+            next => current = workflows.get(next).unwrap(),
+        }
+    }
 }
 
-fn process2(s: &str) -> usize {
+fn process(s: &str) -> isize {
+    let (workflows, items) = parse(s);
+
+    items
+        .iter()
+        .filter(|i| run_workflows(&workflows, i))
+        .map(|i| i.values().sum::<isize>())
+        .sum()
+}
+
+fn process2(s: &str) -> isize {
     let input = parse(s);
     println!("{:?}", input);
 
