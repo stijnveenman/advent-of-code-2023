@@ -47,10 +47,10 @@ struct Workflow {
     otherwise: String,
 }
 
-fn parse(s: &str) -> HashMap<String, Workflow> {
+fn parse(s: &str) -> (HashMap<String, Workflow>, Vec<HashMap<char, isize>>) {
     let (workflows, items) = s.split_once("\n\n").unwrap();
 
-    workflows
+    let workflows = workflows
         .lines()
         .map(|l| {
             let (name, steps_s) = l.split_once('{').unwrap();
@@ -74,12 +74,26 @@ fn parse(s: &str) -> HashMap<String, Workflow> {
             }
         })
         .map(|w| (w.name.to_string(), w))
-        .collect()
+        .collect();
+
+    let items = items
+        .lines()
+        .map(|l| {
+            let l = &l[1..l.len() - 1];
+            l.split(',')
+                .map(|i| i.split_once('=').unwrap())
+                .map(|i| (i.0.chars().next().unwrap(), i.1.parse().unwrap()))
+                .collect()
+        })
+        .collect();
+
+    (workflows, items)
 }
 
 fn process(s: &str) -> usize {
-    let input = parse(s);
-    println!("{:?}", input);
+    let (workflows, items) = parse(s);
+    println!("{:?}", workflows);
+    println!("{:?}", items);
 
     todo!()
 }
