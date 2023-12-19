@@ -97,38 +97,35 @@ fn parse(s: &str) -> (HashMap<String, Workflow>, Vec<Item>) {
     (workflows, items)
 }
 
-fn run_workflows(workflows: &HashMap<String, Workflow>, item: &Item) -> bool {
-    let mut current = workflows.get("in").unwrap();
+fn run_workflows(workflows: &HashMap<String, Workflow>, item: &Item, name: &str) -> bool {
+    let current = workflows.get(name).unwrap();
 
-    loop {
-        println!("{:?}", current);
-        for step in current.steps.iter() {
-            let val = *item.get(&step.item).unwrap();
+    for step in current.steps.iter() {
+        let val = *item.get(&step.item).unwrap();
 
-            let matching = match step.action {
-                '<' => val < step.value,
-                '>' => val > step.value,
-                a => panic!("unknown action {}", a),
-            };
+        let matching = match step.action {
+            '<' => val < step.value,
+            '>' => val > step.value,
+            a => panic!("unknown action {}", a),
+        };
 
-            if !matching {
-                continue;
-            }
-
-            match step.next.as_str() {
-                "A" => return true,
-                "R" => return false,
-
-                next => current = workflows.get(next).unwrap(),
-            }
+        if !matching {
+            continue;
         }
 
-        match current.otherwise.as_str() {
+        match step.next.as_str() {
             "A" => return true,
             "R" => return false,
 
-            next => current = workflows.get(next).unwrap(),
+            next => return run_workflows(workflows, item, next),
         }
+    }
+
+    match current.otherwise.as_str() {
+        "A" => true,
+        "R" => false,
+
+        next => run_workflows(workflows, item, next),
     }
 }
 
@@ -137,7 +134,7 @@ fn process(s: &str) -> isize {
 
     items
         .iter()
-        .filter(|i| run_workflows(&workflows, i))
+        .filter(|i| run_workflows(&workflows, i, "in"))
         .map(|i| i.values().sum::<isize>())
         .sum()
 }
