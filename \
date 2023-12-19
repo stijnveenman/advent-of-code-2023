@@ -29,7 +29,7 @@ static TEST_PART2_RESULT: isize = 167409079868000;
 fn main() {
     let input = include_str!("./input.txt");
 
-    println!("{}", process2(input))
+    println!("{}", process(input))
 }
 
 #[derive(Debug)]
@@ -146,48 +146,34 @@ struct Range {
 }
 
 impl Range {
-    fn lower_then(&self, i: isize) -> Option<Range> {
-        if self.min > i {
-            println!("return none");
-            return None;
-        }
-        Some(Range {
+    fn lower_then(&self, i: isize) -> Range {
+        Range {
             min: self.min.min(i),
             max: self.max.min(i),
-        })
-    }
-    fn higher_then(&self, i: isize) -> Option<Range> {
-        if self.max < i {
-            println!("return none");
-            return None;
         }
-        Some(Range {
+    }
+    fn higher_then(&self, i: isize) -> Range {
+        Range {
             min: self.min.max(i),
             max: self.max.max(i),
-        })
+        }
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 struct RangeItem {
     items: HashMap<char, Range>,
-}
-
-impl RangeItem {
-    pub fn product(&self) -> isize {
-        self.items.values().map(|v| v.max - v.min + 1).product()
-    }
 }
 
 fn calculate_range(
     workflows: &HashMap<String, Workflow>,
     item: RangeItem,
     name: &str,
-    step_index: usize,
+    step: usize,
 ) -> Vec<RangeItem> {
     let current = workflows.get(name).unwrap();
 
-    let Some(step) = current.steps.get(step_index) else {
+    let Some(step) = current.steps.get(step) else {
         match current.otherwise.as_str() {
             "A" => return vec![item],
             "R" => return vec![],
@@ -198,44 +184,19 @@ fn calculate_range(
 
     let val = *item.items.get(&step.item).unwrap();
 
-    let (matching, notmatching) = match step.action {
-        '<' => (val.lower_then(step.value - 1), val.higher_then(step.value)),
-        '>' => (val.higher_then(step.value + 1), val.lower_then(step.value)),
+    let matching = match step.action {
+        '<' => val.lower_then(step.value),
         a => panic!("unknown action {}", a),
     };
 
     println!("{:?} {:?}", matching, step);
+    todo!();
+    match step.next.as_str() {
+        "A" => vec![item],
+        "R" => vec![],
 
-    let mut v = vec![];
-    if let Some(matching) = matching {
-        let mut next_item = item.clone();
-        next_item.items.insert(step.item, matching);
-
-        match step.next.as_str() {
-            "A" => {
-                v.push(next_item);
-            }
-            "R" => (),
-
-            next => {
-                v.append(&mut calculate_range(workflows, next_item, next, 0));
-            }
-        }
+        next => calculate_range(workflows, item, next, 0),
     }
-
-    if let Some(notmatching) = notmatching {
-        let mut next_item = item.clone();
-        next_item.items.insert(step.item, notmatching);
-
-        v.append(&mut calculate_range(
-            workflows,
-            next_item,
-            name,
-            step_index + 1,
-        ));
-    }
-
-    v
 }
 
 fn process2(s: &str) -> isize {
@@ -252,7 +213,7 @@ fn process2(s: &str) -> isize {
     let result = calculate_range(&workflows, a, "in", 0);
     println!("{:?}", result);
 
-    result.iter().map(|i| i.product()).sum()
+    todo!()
 }
 
 #[test]
