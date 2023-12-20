@@ -16,8 +16,8 @@ static TEST_PART2_RESULT: usize = 420;
 
 #[derive(Debug)]
 enum Module {
-    FlipFlop(String),
-    Conjunction(String),
+    FlipFlop(String, bool),
+    Conjunction(String, HashMap<String, bool>),
     Broadcast(Vec<String>),
 }
 
@@ -39,11 +39,11 @@ fn parse(s: &str) -> HashMap<String, Module> {
                 ),
                 l if l.starts_with('%') => (
                     module[1..].to_string(),
-                    Module::FlipFlop(target.trim().to_string()),
+                    Module::FlipFlop(target.trim().to_string(), false),
                 ),
                 l if l.starts_with('&') => (
                     module[1..].to_string(),
-                    Module::Conjunction(target.trim().to_string()),
+                    Module::Conjunction(target.trim().to_string(), HashMap::new()),
                 ),
                 _ => panic!("unhandled {}", module),
             }
