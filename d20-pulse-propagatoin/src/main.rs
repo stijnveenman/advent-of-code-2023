@@ -90,7 +90,7 @@ impl Module {
 fn main() {
     let input = include_str!("./input.txt");
 
-    println!("{}", process(input))
+    println!("{}", process2(input))
 }
 
 fn parse(s: &str) -> HashMap<&str, Module> {
@@ -157,6 +157,35 @@ fn run(state: &mut HashMap<&str, Module>, count: usize) -> usize {
     low_pulses * high_pulses
 }
 
+fn find(state: &mut HashMap<&str, Module>, name: &str) -> usize {
+    let mut pulses = 0;
+
+    loop {
+        let mut pulse_queue = VecDeque::new();
+
+        pulse_queue.push_back(Pulse {
+            from: "button".to_string(),
+            to: "broadcaster".to_string(),
+            pulse: false,
+        });
+        pulses += 1;
+
+        while let Some(pulse) = pulse_queue.pop_front() {
+            if pulse.to == name {
+                println!("{}, {}", pulses, pulse)
+            }
+            if pulse.to == name && !pulse.pulse {
+                return pulses;
+            }
+
+            if let Some(target) = state.get_mut(pulse.to.as_str()) {
+                let mut next = target.send_pulse(pulse);
+                pulse_queue.append(&mut next);
+            };
+        }
+    }
+}
+
 fn process(s: &str) -> usize {
     let mut state = parse(s);
 
@@ -167,10 +196,15 @@ fn process(s: &str) -> usize {
 }
 
 fn process2(s: &str) -> usize {
-    let input = parse(s);
-    println!("{:?}", input);
+    let state = parse(s);
 
-    todo!()
+    let mut state = parse(s);
+
+    //todo fix this properly
+    run(&mut state, 1000);
+    reset(&mut state);
+
+    find(&mut state, "rx")
 }
 
 #[test]
