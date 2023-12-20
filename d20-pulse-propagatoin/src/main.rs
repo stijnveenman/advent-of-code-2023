@@ -9,18 +9,18 @@ use std::{
 #[allow(unused_imports)]
 use util::*;
 
-static TEST_INPUT: &str = "broadcaster -> a, b, c
-%a -> b
-%b -> c
-%c -> inv
-&inv -> a";
-static TEST_PART1_RESULT: usize = 420;
+static TEST_INPUT: &str = "broadcaster -> a
+%a -> inv, con
+&inv -> b
+%b -> con
+&con -> output";
+static TEST_PART1_RESULT: usize = 11687500;
 static TEST_PART2_RESULT: usize = 420;
 
 #[derive(Debug)]
 enum Module {
-    FlipFlop(String, bool),
-    Conjunction(String, HashMap<String, bool>),
+    FlipFlop(Vec<String>, bool),
+    Conjunction(Vec<String>, HashMap<String, bool>),
     Broadcast(Vec<String>),
 }
 
@@ -56,32 +56,32 @@ impl Module {
                     to: to.to_string(),
                 })
                 .collect(),
-            Module::FlipFlop(to, state) => match pulse.pulse {
+            Module::FlipFlop(list, state) => match pulse.pulse {
                 true => VecDeque::new(),
                 false => {
                     *state = !*state;
 
-                    let mut v = VecDeque::new();
-                    v.push_back(Pulse {
-                        from: pulse.to,
-                        to: to.to_string(),
-                        pulse: *state,
-                    });
-                    v
+                    list.iter()
+                        .map(|to| Pulse {
+                            pulse: *state,
+                            from: pulse.to.to_string(),
+                            to: to.to_string(),
+                        })
+                        .collect()
                 }
             },
-            Module::Conjunction(to, state) => {
+            Module::Conjunction(list, state) => {
                 //this probably doesn't know its inputs yet and will fail on real input
                 state.insert(pulse.from, pulse.pulse);
                 let p = !state.values().all(|v| *v);
 
-                let mut v = VecDeque::new();
-                v.push_back(Pulse {
-                    from: pulse.to,
-                    to: to.to_string(),
-                    pulse: p,
-                });
-                v
+                list.iter()
+                    .map(|to| Pulse {
+                        pulse: p,
+                        from: pulse.to.to_string(),
+                        to: to.to_string(),
+                    })
+                    .collect()
             }
         }
     }
@@ -97,19 +97,14 @@ fn parse(s: &str) -> HashMap<&str, Module> {
     s.lines()
         .map(|l| {
             let (module, target) = l.split_once("->").unwrap();
+            let targets = target.split(',').map(|s| s.trim().to_string()).collect();
 
             match module.trim() {
-                "broadcaster" => (
-                    module.trim(),
-                    Module::Broadcast(target.split(',').map(|s| s.trim().to_string()).collect()),
-                ),
-                l if l.starts_with('%') => (
-                    module[1..].trim(),
-                    Module::FlipFlop(target.trim().to_string(), false),
-                ),
+                "broadcaster" => (module.trim(), Module::Broadcast(targets)),
+                l if l.starts_with('%') => (module[1..].trim(), Module::FlipFlop(targets, false)),
                 l if l.starts_with('&') => (
                     module[1..].trim(),
-                    Module::Conjunction(target.trim().to_string(), HashMap::new()),
+                    Module::Conjunction(targets, HashMap::new()),
                 ),
                 _ => panic!("unhandled {}", module),
             }
@@ -117,23 +112,58 @@ fn parse(s: &str) -> HashMap<&str, Module> {
         .collect()
 }
 
-fn process(s: &str) -> usize {
-    let mut state = parse(s);
-    let mut pulse_queue = VecDeque::new();
+fn reset(state: &mut HashMap<&str, Module>) {
+    for (_, i) in state.iter_mut() {
+        match i {
+            Module::FlipFlop(_, state) => {
+                *state = false;
+            }
+            Module::Conjunction(_, state) => {
+                state.iter_mut().for_each(|(_, s)| *s = false);
+            }
+            Module::Broadcast(_) => (),
+        }
+    }
+}
 
-    pulse_queue.push_back(Pulse {
-        from: "button".to_string(),
-        to: "broadcaster".to_string(),
-        pulse: false,
-    });
+fn run(state: &mut HashMap<&str, Module>, count: usize) -> usize {
+    let mut high_pulses = 0;
+    let mut low_pulses = 0;
 
-    while let Some(pulse) = pulse_queue.pop_front() {
-        println!("{}", pulse);
-        let target = state.get_mut(pulse.to.as_str()).unwrap();
-        pulse_queue.append(&mut target.send_pulse(pulse));
+    for i in 0..count {
+        let mut pulse_queue = VecDeque::new();
+
+        pulse_queue.push_back(Pulse {
+            from: "button".to_string(),
+            to: "broadcaster".to_string(),
+            pulse: false,
+        });
+
+        while let Some(pulse) = pulse_queue.pop_front() {
+            println!("{}", pulse);
+            match pulse.pulse {
+                true => high_pulses += 1,
+                false => low_pulses += 1,
+            }
+            if let Some(target) = state.get_mut(pulse.to.as_str()) {
+                pulse_queue.append(&mut target.send_pulse(pulse));
+            };
+        }
+
+        println!();
     }
 
-    todo!()
+    println!("high: {} low {}", high_pulses, low_pulses);
+    low_pulses * high_pulses
+}
+
+fn process(s: &str) -> usize {
+    let mut state = parse(s);
+
+    run(&mut state, 1000);
+    reset(&mut state);
+
+    run(&mut state, 1000)
 }
 
 fn process2(s: &str) -> usize {
