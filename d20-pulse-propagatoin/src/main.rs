@@ -206,6 +206,12 @@ fn get_factors(state: &mut HashMap<&str, Module>, name: &str, target: bool) -> V
     println!("{}", a);
     let a = find(state, name, target);
     println!("{}", a);
+    let a = find(state, name, target);
+    println!("{}", a);
+    let a = find(state, name, target);
+    println!("{}", a);
+    let a = find(state, name, target);
+    println!("{}", a);
     Factorization::run(find(state, name, target) as u32).factors
 }
 
