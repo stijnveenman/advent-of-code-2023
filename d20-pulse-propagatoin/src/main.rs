@@ -6,7 +6,6 @@ use std::{
     fmt::Display,
 };
 
-use itertools::Itertools;
 use prime_factorization::Factorization;
 #[allow(unused_imports)]
 use util::*;
@@ -161,8 +160,9 @@ fn run(state: &mut HashMap<&str, Module>, count: usize) -> usize {
 
 fn find(state: &mut HashMap<&str, Module>, name: &str, target: bool) -> usize {
     let mut pulses = 0;
+    let mut found = false;
 
-    loop {
+    while !found {
         let mut pulse_queue = VecDeque::new();
 
         pulse_queue.push_back(Pulse {
@@ -173,8 +173,8 @@ fn find(state: &mut HashMap<&str, Module>, name: &str, target: bool) -> usize {
         pulses += 1;
 
         while let Some(pulse) = pulse_queue.pop_front() {
-            if pulse.to == name && pulse.pulse == target {
-                return pulses;
+            if pulse.from == name && pulse.pulse == target {
+                found = true;
             }
 
             if let Some(target) = state.get_mut(pulse.to.as_str()) {
@@ -183,6 +183,8 @@ fn find(state: &mut HashMap<&str, Module>, name: &str, target: bool) -> usize {
             };
         }
     }
+
+    pulses
 }
 
 fn process(s: &str) -> usize {
@@ -196,7 +198,14 @@ fn process(s: &str) -> usize {
 
 fn get_factors(state: &mut HashMap<&str, Module>, name: &str, target: bool) -> Vec<u32> {
     reset(state);
-    find(state, "sg", false);
+    let a = find(state, name, target);
+    println!("{}", a);
+    let a = find(state, name, target);
+    println!("{}", a);
+    let a = find(state, name, target);
+    println!("{}", a);
+    let a = find(state, name, target);
+    println!("{}", a);
     Factorization::run(find(state, name, target) as u32).factors
 }
 
@@ -226,14 +235,14 @@ fn process2(s: &str) -> usize {
     let factors = Factorization::run(find(&mut state, "sg", false) as u32).factors;
 
     let vecs = vec![
-        get_factors(&mut state, "sg", false),
-        get_factors(&mut state, "lm", false),
-        get_factors(&mut state, "dh", false),
-        get_factors(&mut state, "db", false),
+        get_factors(&mut state, "sg", true),
+        get_factors(&mut state, "lm", true),
+        get_factors(&mut state, "dh", true),
+        get_factors(&mut state, "db", true),
     ];
     println!("{:?}", vecs);
     vecs.into_iter()
-        .concat()
+        .fold(vec![], combine_vec)
         .iter()
         .map(|i| *i as usize)
         .product()
