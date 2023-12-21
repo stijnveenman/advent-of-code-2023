@@ -6,6 +6,8 @@ use std::{
     fmt::Display,
 };
 
+use itertools::Itertools;
+use prime_factorization::Factorization;
 #[allow(unused_imports)]
 use util::*;
 
@@ -157,7 +159,7 @@ fn run(state: &mut HashMap<&str, Module>, count: usize) -> usize {
     low_pulses * high_pulses
 }
 
-fn find(state: &mut HashMap<&str, Module>, name: &str) -> usize {
+fn find(state: &mut HashMap<&str, Module>, name: &str, target: bool) -> usize {
     let mut pulses = 0;
 
     loop {
@@ -171,10 +173,7 @@ fn find(state: &mut HashMap<&str, Module>, name: &str) -> usize {
         pulses += 1;
 
         while let Some(pulse) = pulse_queue.pop_front() {
-            if pulse.to == name {
-                println!("{}, {}", pulses, pulse)
-            }
-            if pulse.to == name && !pulse.pulse {
+            if pulse.to == name && pulse.pulse == target {
                 return pulses;
             }
 
@@ -195,6 +194,25 @@ fn process(s: &str) -> usize {
     run(&mut state, 1000)
 }
 
+fn get_factors(state: &mut HashMap<&str, Module>, name: &str, target: bool) -> Vec<u32> {
+    reset(state);
+    find(state, "sg", false);
+    Factorization::run(find(state, name, target) as u32).factors
+}
+
+fn combine_vec(mut a: Vec<u32>, mut b: Vec<u32>) -> Vec<u32> {
+    println!("{:?} {:?}", a, b);
+    for i in a.iter() {
+        if let Some(index) = b.iter().position(|x| x == i) {
+            b.remove(index);
+        }
+    }
+
+    a.append(&mut b);
+    println!("{:?} ", a);
+    a
+}
+
 fn process2(s: &str) -> usize {
     let state = parse(s);
 
@@ -204,7 +222,21 @@ fn process2(s: &str) -> usize {
     run(&mut state, 1000);
     reset(&mut state);
 
-    find(&mut state, "rx")
+    find(&mut state, "sg", false);
+    let factors = Factorization::run(find(&mut state, "sg", false) as u32).factors;
+
+    let vecs = vec![
+        get_factors(&mut state, "sg", false),
+        get_factors(&mut state, "lm", false),
+        get_factors(&mut state, "dh", false),
+        get_factors(&mut state, "db", false),
+    ];
+    println!("{:?}", vecs);
+    vecs.into_iter()
+        .concat()
+        .iter()
+        .map(|i| *i as usize)
+        .product()
 }
 
 #[test]
