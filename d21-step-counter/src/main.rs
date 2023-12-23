@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 mod util;
-use std::collections::HashSet;
+use std::collections::{HashSet, VecDeque};
 
 use aoc_toolbox::{char_grid::CharGrid, point::Point};
 #[allow(unused_imports)]
@@ -34,11 +34,12 @@ fn step_count(grid: &mut CharGrid<char>, step_count: usize) -> usize {
         .unwrap();
     grid.remove(&start);
 
-    let mut open = vec![(start, step_count)];
+    let mut open = VecDeque::new();
+    open.push_back((start, step_count));
     let mut visited = HashSet::new();
     let mut closed = HashSet::new();
 
-    while let Some((current, steps)) = open.pop() {
+    while let Some((current, steps)) = open.pop_front() {
         if visited.contains(&(current, steps)) {
             continue;
         }
@@ -61,7 +62,7 @@ fn step_count(grid: &mut CharGrid<char>, step_count: usize) -> usize {
             let np = Point::new(x, y);
             grid.get(&np).is_none()
         }) {
-            open.push((n, steps - 1));
+            open.push_back((n, steps - 1));
         }
     }
 
@@ -91,4 +92,7 @@ fn test_part2() {
     assert_eq!(process(TEST_INPUT, 10), 50);
     assert_eq!(process(TEST_INPUT, 50), 1594);
     assert_eq!(process(TEST_INPUT, 100), 6536);
+    //    assert_eq!(process(TEST_INPUT, 500), 167004);
+    //    assert_eq!(process(TEST_INPUT, 1000), 668697);
+    //    assert_eq!(process(TEST_INPUT, 5000), 16733044);
 }
