@@ -104,79 +104,76 @@ fn process(s: &str) -> usize {
     max
 }
 
+fn insert(map: &mut HashMap<Point, Vec<(Point, usize)>>, from: &Point, to: &Point, value: usize) {
+    let mut v = map.get(from).unwrap_or(&vec![]).to_vec();
+    v.push((*to, value));
+    map.insert(*from, v);
+
+    let mut v = map.get(to).unwrap_or(&vec![]).to_vec();
+    v.push((*from, value));
+    map.insert(*to, v);
+}
+
 fn compress(
     grid: &CharGrid<char>,
-    map: &mut HashMap<Point, (Point, usize)>,
-    visited: &mut HashSet<Point>,
-    from: &Point,
-    goal: &Point,
-) {
-    if from == goal {
-        return;
-    }
-    let mut current = *from;
-    let mut count = 0;
+    from: Point,
+    goal: Point,
+) -> HashMap<Point, Vec<(Point, usize)>> {
+    let mut map = HashMap::new();
+    let mut visited = HashSet::new();
+    let mut open = vec![(from, 0, from + Point::UP, from)];
 
-    loop {
+    while let Some((current, value, prev, start)) = open.pop() {
         let nbs = current
             .neighbours()
             .into_iter()
             .filter(|n| grid.is_within(n))
             .filter(|n| grid.get(n).map(|c| c != &'#').unwrap_or(true))
-            .filter(|n| !visited.contains(n))
+            .filter(|n| *n != prev)
             .collect_vec();
-        visited.insert(current);
 
-        if nbs.len() == 1 {
-            current = *nbs.first().unwrap();
-            count += 1;
-            if current == *goal {
-                map.insert(*from, (current, count));
-                map.insert(current, (*from, count));
-                return;
-            }
-        } else if nbs.is_empty() {
-            if *from != current {
-                map.insert(*from, (current, count));
-                map.insert(current, (*from, count));
-            }
-            return;
+        if nbs.is_empty() {
+            println!("{:?} -> {:?}: {}", start, current, value);
+            insert(&mut map, &start, &current, value);
+        } else if nbs.len() == 1 {
+            let n = nbs.first().unwrap();
+            open.push((*n, value + 1, current, start));
         } else {
-            map.insert(*from, (current, count));
-            map.insert(current, (*from, count));
-            if current == *goal {
-                return;
+            println!("{:?} -> {:?}: {}", start, current, value);
+            insert(&mut map, &start, &current, value);
+            if !visited.contains(&current) {
+                for n in nbs {
+                    open.push((n, 1, current, current));
+                }
             }
-
-            for n in nbs.iter() {
-                compress(grid, map, visited, n, goal);
-            }
+            visited.insert(current);
         }
     }
+
+    map
 }
 
 fn longest(
-    map: &HashMap<Point, (Point, usize)>,
-    start: &Point,
-    goal: &Point,
+    map: &HashMap<Point, Vec<(Point, usize)>>,
+    start: Point,
+    goal: Point,
     visited: HashSet<Point>,
     score: usize,
 ) -> usize {
     if start == goal {
-        println!("done");
+        println!("{:?} - {}", visited, score);
         return score;
     }
-    start
-        .neighbours()
-        .into_iter()
-        .filter(|n| !visited.contains(n))
-        .filter_map(|n| map.get(&n))
-        .dbg()
-        .map(|(n, np)| {
-            let mut nv = visited.clone();
-            nv.insert(*n);
 
-            longest(map, n, goal, nv, score + np)
+    let next = map.get(&start).unwrap();
+
+    next.iter()
+        .filter(|n| !visited.contains(&n.0))
+        .map(|n| {
+            let mut v = visited.clone();
+            v.insert(n.0);
+
+            longest(map, n.0, goal, v, score + n.1)
         })
         .max()
         .unwrap_or(0)
@@ -189,15 +186,12 @@ fn process2(s: &str) -> usize {
     });
     let start = Point::new(1, 0);
     let goal = grid.upper() + Point::new(-1, 0);
-    println!("{:?}", goal);
 
-    let mut map = HashMap::new();
-    let mut visited = HashSet::new();
-    compress(&grid, &mut map, &mut visited, &start, &goal);
-    map.iter().for_each(|n| println!("{:?}", n));
+    let map = compress(&grid, start, goal);
+    map.iter()
+        .for_each(|(from, to)| println!("{:?} -> {:?}: ", from, to));
 
-    let start = Point::new(0, 0);
-    longest(&map, &start, &goal, HashSet::new(), 0)
+    longest(&map, start, goal, HashSet::new(), 0)
 }
 
 #[test]
