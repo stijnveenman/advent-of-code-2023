@@ -36,7 +36,7 @@ static TEST_PART2_RESULT: usize = 420;
 fn main() {
     let input = include_str!("./input.txt");
 
-    println!("{}", process(TEST_INPUT))
+    println!("{}", process(input))
 }
 
 fn next<T>(v: &mut Vec<(T, usize)>) -> Option<(T, usize)> {
@@ -67,6 +67,7 @@ fn process(s: &str) -> usize {
     let goal = grid.upper() + Point::new(-1, 0);
 
     let mut open = vec![(vec![start], 0)];
+    let mut max = 0;
 
     while let Some((list, value)) = next(&mut open) {
         let current = *list.last().unwrap();
@@ -74,13 +75,16 @@ fn process(s: &str) -> usize {
             .neighbours()
             .into_iter()
             .filter(|n| grid.is_within(n))
+            .filter(|n| match grid.get(&current) {
+                Some('#') => false,
+                Some('^') => *n == current + Point::UP,
+                Some('v') => *n == current + Point::DOWN,
+                Some('>') => *n == current + Point::RIGHT,
+                Some('<') => *n == current + Point::LEFT,
+                Some(c) => panic!("char missing {}", c),
+                None => true,
+            })
         {
-            if let Some(c) = grid.get(&n) {
-                if c == &'#' {
-                    continue;
-                }
-            }
-
             if list.contains(&n) {
                 continue;
             }
@@ -90,12 +94,13 @@ fn process(s: &str) -> usize {
             open.push((nv, value + 1))
         }
 
-        if current == goal {
+        if current == goal && value > max {
+            max = value;
             println!("{}", value);
         }
     }
 
-    panic!()
+    max
 }
 
 fn process2(s: &str) -> usize {
