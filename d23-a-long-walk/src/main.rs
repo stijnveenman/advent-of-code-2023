@@ -51,6 +51,21 @@ fn next(v: &mut Vec<(Point, usize)>) -> Option<(Point, usize)> {
     Some(v.remove(index.0))
 }
 
+fn on_path(closed_set: &HashMap<Point, (usize, Point)>, from: &Point, p: &Point) -> bool {
+    let mut current = *from;
+    if from == p {
+        return true;
+    }
+    while let Some(cur) = closed_set.get(&current) {
+        if cur.1 == *p {
+            return true;
+        }
+
+        current = cur.1;
+    }
+    false
+}
+
 fn process(s: &str) -> usize {
     let grid = CharGrid::new(s, |c| match c {
         '.' => None,
@@ -60,11 +75,10 @@ fn process(s: &str) -> usize {
     let goal = grid.upper() + Point::new(-1, 0);
 
     let mut open = vec![(start, 0)];
-    let mut closed_set = HashMap::new();
+    let mut closed_set: HashMap<Point, (usize, Point)> = HashMap::new();
+    closed_set.insert(start, (0, Point::new(-1, -1)));
 
     while let Some((current, value)) = next(&mut open) {
-        closed_set.insert(current, value);
-
         for n in current
             .neighbours()
             .into_iter()
@@ -77,15 +91,27 @@ fn process(s: &str) -> usize {
             }
 
             if let Some(existing_value) = closed_set.get(&n) {
-                if *existing_value <= value + 1 {
+                if existing_value.0 <= value + 1 {
                     continue;
                 }
             }
 
+            closed_set.insert(n, (value + 1, current));
             open.push((n, value + 1))
         }
 
         if current == goal {
+            grid.draw(|p, c| {
+                if on_path(&closed_set, &goal, p) {
+                    'O'
+                } else {
+                    match c {
+                        Some(c) => *c,
+                        _ => '.',
+                    }
+                }
+            });
+
             return value;
         }
     }
