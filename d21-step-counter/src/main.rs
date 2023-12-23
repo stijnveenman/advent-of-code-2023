@@ -3,7 +3,7 @@
 mod util;
 use std::collections::HashSet;
 
-use aoc_toolbox::char_grid::CharGrid;
+use aoc_toolbox::{char_grid::CharGrid, point::Point};
 #[allow(unused_imports)]
 use util::*;
 
@@ -19,12 +19,11 @@ static TEST_INPUT: &str = "...........
 .##..##.##.
 ...........";
 static TEST_PART1_RESULT: usize = 16;
-static TEST_PART2_RESULT: usize = 420;
 
 fn main() {
     let input = include_str!("./input.txt");
 
-    println!("{}", process(input, 64))
+    println!("{}", process(input, 26501365))
 }
 
 fn step_count(grid: &mut CharGrid<char>, step_count: usize) -> usize {
@@ -49,12 +48,19 @@ fn step_count(grid: &mut CharGrid<char>, step_count: usize) -> usize {
             continue;
         }
 
-        for n in current
-            .neighbours()
-            .into_iter()
-            .filter(|p| grid.is_within(p))
-            .filter(|p| grid.get(p).is_none())
-        {
+        for n in current.neighbours().into_iter().filter(|p| {
+            let bounds = grid.upper();
+            let mut x = p.x % (bounds.x + 1);
+            let mut y = p.y % (bounds.y + 1);
+            while x < 0 {
+                x += bounds.x + 1;
+            }
+            while y < 0 {
+                y += bounds.y + 1;
+            }
+            let np = Point::new(x, y);
+            grid.get(&np).is_none()
+        }) {
             open.push((n, steps - 1));
         }
     }
@@ -72,17 +78,6 @@ fn process(s: &str, count: usize) -> usize {
     step_count(&mut grid, count)
 }
 
-fn process2(s: &str) -> usize {
-    let grid = CharGrid::new(s, |c| match c {
-        '#' => Some('#'),
-        'S' => Some('S'),
-        _ => None,
-    });
-    grid.draw_char();
-
-    todo!()
-}
-
 #[test]
 fn test_part1() {
     let result = process(TEST_INPUT, 6);
@@ -92,7 +87,8 @@ fn test_part1() {
 
 #[test]
 fn test_part2() {
-    let result = process2(TEST_INPUT);
-
-    assert_eq!(dbg!(result), TEST_PART2_RESULT)
+    assert_eq!(process(TEST_INPUT, 6), 16);
+    assert_eq!(process(TEST_INPUT, 10), 50);
+    assert_eq!(process(TEST_INPUT, 50), 1594);
+    assert_eq!(process(TEST_INPUT, 100), 6536);
 }
