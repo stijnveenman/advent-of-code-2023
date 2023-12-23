@@ -72,6 +72,10 @@ impl<T> CharGrid<T> {
         self.map.insert(p, item);
     }
 
+    pub fn remove(&mut self, p: &Point) {
+        self.map.remove(p);
+    }
+
     pub fn floodfill(&mut self, from: &Point, with: T)
     where
         T: Copy,
