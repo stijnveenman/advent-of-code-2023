@@ -4,6 +4,7 @@ mod util;
 use std::collections::{HashMap, HashSet};
 
 use aoc_toolbox::{char_grid::CharGrid, point::Point};
+use chrono::Local;
 use itertools::Itertools;
 #[allow(unused_imports)]
 use util::*;
@@ -37,7 +38,7 @@ static TEST_PART2_RESULT: usize = 154;
 fn main() {
     let input = include_str!("./input.txt");
 
-    println!("{}", process2(TEST_INPUT))
+    println!("{}", process2(input))
 }
 
 fn next<T>(v: &mut Vec<(T, usize)>) -> Option<(T, usize)> {
@@ -133,13 +134,11 @@ fn compress(
             .collect_vec();
 
         if nbs.is_empty() {
-            println!("{:?} -> {:?}: {}", start, current, value);
             insert(&mut map, &start, &current, value);
         } else if nbs.len() == 1 {
             let n = nbs.first().unwrap();
             open.push((*n, value + 1, current, start));
         } else {
-            println!("{:?} -> {:?}: {}", start, current, value);
             insert(&mut map, &start, &current, value);
             if !visited.contains(&current) {
                 for n in nbs {
@@ -161,11 +160,18 @@ fn longest(
     score: usize,
 ) -> usize {
     if start == goal {
-        println!("{:?} - {}", visited, score);
         return score;
     }
 
     let next = map.get(&start).unwrap();
+    if let Some(n) = next.iter().find(|v| v.0 == goal) {
+        let mut v = visited.clone();
+        v.insert(n.0);
+
+        return longest(map, n.0, goal, v, score + n.1);
+    }
+
+    let mut max = 0;
 
     next.iter()
         .filter(|n| !visited.contains(&n.0))
@@ -175,8 +181,16 @@ fn longest(
 
             longest(map, n.0, goal, v, score + n.1)
         })
-        .max()
-        .unwrap_or(0)
+        .for_each(|v| {
+            if v > max {
+                let now = Local::now();
+                let res = now.format("%Y-%m-%d %H:%M:%S");
+                max = v;
+                println!("{}: new max {}", res, max);
+            }
+        });
+
+    max
 }
 
 fn process2(s: &str) -> usize {
@@ -188,8 +202,7 @@ fn process2(s: &str) -> usize {
     let goal = grid.upper() + Point::new(-1, 0);
 
     let map = compress(&grid, start, goal);
-    map.iter()
-        .for_each(|(from, to)| println!("{:?} -> {:?}: ", from, to));
+    println!("done compressing: {} steps", map.len());
 
     longest(&map, start, goal, HashSet::new(), 0)
 }
