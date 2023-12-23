@@ -37,7 +37,7 @@ static TEST_PART2_RESULT: usize = 154;
 fn main() {
     let input = include_str!("./input.txt");
 
-    println!("{}", process(input))
+    println!("{}", process2(input))
 }
 
 fn next<T>(v: &mut Vec<(T, usize)>) -> Option<(T, usize)> {
@@ -104,7 +104,12 @@ fn process(s: &str) -> usize {
     max
 }
 
-fn walk(grid: &CharGrid<char>, list: &mut Vec<Point>, goal: Point) -> Vec<usize> {
+fn walk(
+    grid: &CharGrid<char>,
+    list: &mut Vec<Point>,
+    goal: Point,
+    deadends: &mut Vec<Point>,
+) -> Option<Vec<usize>> {
     let mut current = *list.last().unwrap();
 
     loop {
@@ -112,25 +117,17 @@ fn walk(grid: &CharGrid<char>, list: &mut Vec<Point>, goal: Point) -> Vec<usize>
             .neighbours()
             .into_iter()
             .filter(|n| grid.is_within(n))
-            .filter(|n| !list.contains(n))
             .filter(|n| grid.get(n).map(|c| *c != '#').unwrap_or(true))
+            .filter(|n| !list.contains(n))
+            .filter(|n| !deadends.contains(n))
             .collect_vec();
 
         if nbs.is_empty() && current != goal {
-            grid.draw(|p, c| {
-                if *p == current {
-                    '?'
-                } else if list.contains(p) {
-                    'O'
-                } else {
-                    *c.unwrap_or(&'.')
-                }
-            });
-            println!("deadend {:?}", current);
+            return None;
         }
 
         if current == goal {
-            println!("{}", list.len());
+            return Some(vec![list.len() - 1]);
         }
 
         if nbs.len() == 1 {
@@ -138,14 +135,36 @@ fn walk(grid: &CharGrid<char>, list: &mut Vec<Point>, goal: Point) -> Vec<usize>
             list.push(*n);
             current = *n;
         } else {
-            return nbs
-                .into_iter()
-                .flat_map(|n| {
-                    let mut nv = list.to_vec();
-                    nv.push(n);
-                    walk(grid, &mut nv, goal)
-                })
-                .collect_vec();
+            let mut v = vec![];
+
+            for n in nbs.into_iter() {
+                let mut nv = list.to_vec();
+                nv.push(n);
+                let index = nv.len() - 1;
+                if let Some(mut r) = walk(grid, &mut nv, goal, &mut deadends.clone()) {
+                    v.append(&mut r)
+                } else {
+                    let mut deadend = nv[index..].to_vec();
+                    deadends.append(&mut deadend);
+                    //grid.draw(|p, c| {
+                    //    if *p == current {
+                    //        'X'
+                    //    } else if deadend.contains(p) {
+                    //        '?'
+                    //    } else if list.contains(p) {
+                    //        'O'
+                    //    } else {
+                    //        *c.unwrap_or(&'.')
+                    //    }
+                    //});
+                }
+            }
+
+            if v.is_empty() {
+                return None;
+            }
+
+            return Some(v);
         }
     }
 }
@@ -158,7 +177,8 @@ fn process2(s: &str) -> usize {
     let start = Point::new(1, 0);
     let goal = grid.upper() + Point::new(-1, 0);
 
-    walk(&grid, &mut vec![start], goal)
+    walk(&grid, &mut vec![start], goal, &mut vec![])
+        .unwrap()
         .into_iter()
         .max()
         .unwrap()
