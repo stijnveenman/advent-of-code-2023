@@ -39,11 +39,11 @@ fn main() {
     println!("{}", process(TEST_INPUT))
 }
 
-fn next(v: &mut Vec<(Point, usize)>) -> Option<(Point, usize)> {
+fn next<T>(v: &mut Vec<(T, usize)>) -> Option<(T, usize)> {
     if v.is_empty() {
         return None;
     }
-    let highest = v.iter().map(|v| v.1).min().unwrap();
+    let highest = v.iter().map(|v| v.1).max().unwrap();
     let Some(index) = v.iter().enumerate().find(|v| v.1 .1 == highest) else {
         return None;
     };
@@ -51,17 +51,9 @@ fn next(v: &mut Vec<(Point, usize)>) -> Option<(Point, usize)> {
     Some(v.remove(index.0))
 }
 
-fn on_path(closed_set: &HashMap<Point, (usize, Point)>, from: &Point, p: &Point) -> bool {
-    let mut current = *from;
-    if from == p {
-        return true;
-    }
-    while let Some(cur) = closed_set.get(&current) {
-        if cur.1 == *p {
-            return true;
-        }
-
-        current = cur.1;
+fn on_path(closed_set: &HashMap<Point, (usize, Vec<Point>)>, from: &Point, p: &Point) -> bool {
+    if let Some(cur) = closed_set.get(from) {
+        return cur.1.contains(p);
     }
     false
 }
@@ -74,11 +66,10 @@ fn process(s: &str) -> usize {
     let start = Point::new(1, 0);
     let goal = grid.upper() + Point::new(-1, 0);
 
-    let mut open = vec![(start, 0)];
-    let mut closed_set: HashMap<Point, (usize, Point)> = HashMap::new();
-    closed_set.insert(start, (0, Point::new(-1, -1)));
+    let mut open = vec![(vec![start], 0)];
 
-    while let Some((current, value)) = next(&mut open) {
+    while let Some((list, value)) = next(&mut open) {
+        let current = *list.last().unwrap();
         for n in current
             .neighbours()
             .into_iter()
@@ -90,19 +81,18 @@ fn process(s: &str) -> usize {
                 }
             }
 
-            if let Some(existing_value) = closed_set.get(&n) {
-                if existing_value.0 <= value + 1 {
-                    continue;
-                }
+            if list.contains(&n) {
+                continue;
             }
 
-            closed_set.insert(n, (value + 1, current));
-            open.push((n, value + 1))
+            let mut nv = list.to_vec();
+            nv.push(n);
+            open.push((nv, value + 1))
         }
 
         if current == goal {
             grid.draw(|p, c| {
-                if on_path(&closed_set, &goal, p) {
+                if list.contains(p) {
                     'O'
                 } else {
                     match c {
@@ -111,8 +101,6 @@ fn process(s: &str) -> usize {
                     }
                 }
             });
-
-            return value;
         }
     }
 
