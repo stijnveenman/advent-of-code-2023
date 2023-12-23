@@ -31,7 +31,7 @@ static TEST_INPUT: &str = "#.#####################
 #.....###...###...#...#
 #####################.#";
 static TEST_PART1_RESULT: usize = 94;
-static TEST_PART2_RESULT: usize = 420;
+static TEST_PART2_RESULT: usize = 154;
 
 fn main() {
     let input = include_str!("./input.txt");
@@ -108,9 +108,35 @@ fn process2(s: &str) -> usize {
         '.' => None,
         _ => Some(c),
     });
-    grid.draw_char();
+    let start = Point::new(1, 0);
+    let goal = grid.upper() + Point::new(-1, 0);
 
-    todo!()
+    let mut open = vec![(vec![start], 0)];
+    let mut max = 0;
+
+    while let Some((list, value)) = next(&mut open) {
+        let current = *list.last().unwrap();
+        for n in current
+            .neighbours()
+            .into_iter()
+            .filter(|n| grid.is_within(n))
+        {
+            if list.contains(&n) {
+                continue;
+            }
+
+            let mut nv = list.to_vec();
+            nv.push(n);
+            open.push((nv, value + 1))
+        }
+
+        if current == goal && value > max {
+            max = value;
+            println!("{}", value);
+        }
+    }
+
+    max
 }
 
 #[test]
