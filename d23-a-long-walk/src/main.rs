@@ -121,6 +121,11 @@ fn process2(s: &str) -> usize {
             .into_iter()
             .filter(|n| grid.is_within(n))
         {
+            if let Some(c) = grid.get(&n) {
+                if c == &'#' {
+                    continue;
+                }
+            }
             if list.contains(&n) {
                 continue;
             }
