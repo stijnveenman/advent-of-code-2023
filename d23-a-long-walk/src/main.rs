@@ -4,6 +4,7 @@ mod util;
 use std::collections::HashMap;
 
 use aoc_toolbox::{char_grid::CharGrid, point::Point};
+use itertools::Itertools;
 #[allow(unused_imports)]
 use util::*;
 
@@ -103,6 +104,52 @@ fn process(s: &str) -> usize {
     max
 }
 
+fn walk(grid: &CharGrid<char>, list: &mut Vec<Point>, goal: Point) -> Vec<usize> {
+    let mut current = *list.last().unwrap();
+
+    loop {
+        let nbs = current
+            .neighbours()
+            .into_iter()
+            .filter(|n| grid.is_within(n))
+            .filter(|n| !list.contains(n))
+            .filter(|n| grid.get(n).map(|c| *c != '#').unwrap_or(true))
+            .collect_vec();
+
+        if nbs.is_empty() && current != goal {
+            grid.draw(|p, c| {
+                if *p == current {
+                    '?'
+                } else if list.contains(p) {
+                    'O'
+                } else {
+                    *c.unwrap_or(&'.')
+                }
+            });
+            println!("deadend {:?}", current);
+        }
+
+        if current == goal {
+            println!("{}", list.len());
+        }
+
+        if nbs.len() == 1 {
+            let n = nbs.first().unwrap();
+            list.push(*n);
+            current = *n;
+        } else {
+            return nbs
+                .into_iter()
+                .flat_map(|n| {
+                    let mut nv = list.to_vec();
+                    nv.push(n);
+                    walk(grid, &mut nv, goal)
+                })
+                .collect_vec();
+        }
+    }
+}
+
 fn process2(s: &str) -> usize {
     let grid = CharGrid::new(s, |c| match c {
         '.' => None,
@@ -111,37 +158,10 @@ fn process2(s: &str) -> usize {
     let start = Point::new(1, 0);
     let goal = grid.upper() + Point::new(-1, 0);
 
-    let mut open = vec![(vec![start], 0)];
-    let mut max = 0;
-
-    while let Some((list, value)) = next(&mut open) {
-        let current = *list.last().unwrap();
-        for n in current
-            .neighbours()
-            .into_iter()
-            .filter(|n| grid.is_within(n))
-        {
-            if let Some(c) = grid.get(&n) {
-                if c == &'#' {
-                    continue;
-                }
-            }
-            if list.contains(&n) {
-                continue;
-            }
-
-            let mut nv = list.to_vec();
-            nv.push(n);
-            open.push((nv, value + 1))
-        }
-
-        if current == goal && value > max {
-            max = value;
-            println!("{}", value);
-        }
-    }
-
-    max
+    walk(&grid, &mut vec![start], goal)
+        .into_iter()
+        .max()
+        .unwrap()
 }
 
 #[test]
