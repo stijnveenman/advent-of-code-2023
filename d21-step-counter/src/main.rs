@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 mod util;
-use std::collections::{HashSet, VecDeque};
+use std::collections::{HashMap, VecDeque};
 
 use aoc_toolbox::{char_grid::CharGrid, point::Point};
 #[allow(unused_imports)]
@@ -26,6 +26,18 @@ fn main() {
     println!("{}", process(input, 26501365))
 }
 
+fn next(v: &mut Vec<(Point, usize)>) -> Option<(Point, usize)> {
+    if v.is_empty() {
+        return None;
+    }
+    let m = v.iter().map(|v| v.1).min().unwrap();
+    let Some(index) = v.iter().enumerate().find(|v| v.1 .1 == m) else {
+        return None;
+    };
+
+    Some(v.remove(index.0))
+}
+
 fn step_count(grid: &mut CharGrid<char>, step_count: usize) -> usize {
     let start = *grid
         .iter()
@@ -34,41 +46,60 @@ fn step_count(grid: &mut CharGrid<char>, step_count: usize) -> usize {
         .unwrap();
     grid.remove(&start);
 
-    let mut open = VecDeque::new();
-    open.push_back((start, step_count));
-    let mut visited = HashSet::new();
-    let mut closed = HashSet::new();
+    let mut open = vec![(start, 0)];
+    let mut visited = HashMap::new();
 
-    while let Some((current, steps)) = open.pop_front() {
-        if visited.contains(&current) {
+    while let Some((current, steps)) = next(&mut open) {
+        if visited.get(&current).map(|v| *v <= steps).unwrap_or(false) {
             continue;
         }
-        visited.insert(current);
-        if steps % 2 == 0 {
-            closed.insert(current);
-        }
-        if steps == 0 {
-            continue;
-        }
+        visited.insert(current, steps);
 
-        for n in current.neighbours().into_iter().filter(|p| {
-            let bounds = grid.upper();
-            let mut x = p.x % (bounds.x + 1);
-            let mut y = p.y % (bounds.y + 1);
-            while x < 0 {
-                x += bounds.x + 1;
-            }
-            while y < 0 {
-                y += bounds.y + 1;
-            }
-            let np = Point::new(x, y);
-            grid.get(&np).is_none()
-        }) {
-            open.push_back((n, steps - 1));
+        for n in current
+            .neighbours()
+            .into_iter()
+            .filter(|p| grid.is_within(p))
+            .filter(|p| grid.get(p).is_none())
+        {
+            open.push((n, steps + 1));
         }
     }
 
-    closed.len()
+    //https://github.com/villuna/aoc23/wiki/A-Geometric-solution-to-advent-of-code-2023,-day-21
+    let even_corners = visited
+        .values()
+        .filter(|v| **v % 2 == 0 && **v > 65)
+        .count();
+    let odd_corners = visited
+        .values()
+        .filter(|v| **v % 2 == 1 && **v > 65)
+        .count();
+
+    let even_full = visited.values().filter(|v| **v % 2 == 0).count();
+    let odd_full = visited.values().filter(|v| **v % 2 == 1).count();
+
+    let even_corners = visited
+        .values()
+        .filter(|v| **v % 2 == 0 && **v > 65)
+        .count();
+    let odd_corners = visited
+        .values()
+        .filter(|v| **v % 2 == 1 && **v > 65)
+        .count();
+
+    // This is 202300 but im writing it out here to show the process
+    let n = 202300;
+    assert_eq!(n, 202300);
+
+    let even = n * n;
+    let odd = (n + 1) * (n + 1);
+
+    let p2 = odd * visited.values().filter(|v| **v % 2 == 1).count()
+        + even * visited.values().filter(|v| **v % 2 == 0).count()
+        - ((n + 1) * odd_corners)
+        + (n * even_corners);
+
+    p2
 }
 
 fn process(s: &str, count: usize) -> usize {
