@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 mod util;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use aoc_toolbox::{char_grid::CharGrid, point::Point};
 use itertools::Itertools;
@@ -37,7 +37,7 @@ static TEST_PART2_RESULT: usize = 154;
 fn main() {
     let input = include_str!("./input.txt");
 
-    println!("{}", process2(input))
+    println!("{}", process2(TEST_INPUT))
 }
 
 fn next<T>(v: &mut Vec<(T, usize)>) -> Option<(T, usize)> {
@@ -104,69 +104,82 @@ fn process(s: &str) -> usize {
     max
 }
 
-fn walk(
+fn compress(
     grid: &CharGrid<char>,
-    list: &mut Vec<Point>,
-    goal: Point,
-    deadends: &mut Vec<Point>,
-) -> Option<Vec<usize>> {
-    let mut current = *list.last().unwrap();
+    map: &mut HashMap<Point, (Point, usize)>,
+    visited: &mut HashSet<Point>,
+    from: &Point,
+    goal: &Point,
+) {
+    if from == goal {
+        return;
+    }
+    let mut current = *from;
+    let mut count = 0;
 
     loop {
         let nbs = current
             .neighbours()
             .into_iter()
             .filter(|n| grid.is_within(n))
-            .filter(|n| grid.get(n).map(|c| *c != '#').unwrap_or(true))
-            .filter(|n| !list.contains(n))
-            .filter(|n| !deadends.contains(n))
+            .filter(|n| grid.get(n).map(|c| c != &'#').unwrap_or(true))
+            .filter(|n| !visited.contains(n))
             .collect_vec();
-
-        if nbs.is_empty() && current != goal {
-            return None;
-        }
-
-        if current == goal {
-            return Some(vec![list.len() - 1]);
-        }
+        visited.insert(current);
 
         if nbs.len() == 1 {
-            let n = nbs.first().unwrap();
-            list.push(*n);
-            current = *n;
+            current = *nbs.first().unwrap();
+            count += 1;
+            if current == *goal {
+                map.insert(*from, (current, count));
+                map.insert(current, (*from, count));
+                return;
+            }
+        } else if nbs.is_empty() {
+            if *from != current {
+                map.insert(*from, (current, count));
+                map.insert(current, (*from, count));
+            }
+            return;
         } else {
-            let mut v = vec![];
-
-            for n in nbs.into_iter() {
-                let mut nv = list.to_vec();
-                nv.push(n);
-                let index = nv.len() - 1;
-                if let Some(mut r) = walk(grid, &mut nv, goal, &mut deadends.clone()) {
-                    v.append(&mut r)
-                } else {
-                    let mut deadend = nv[index..].to_vec();
-                    deadends.append(&mut deadend);
-                    //grid.draw(|p, c| {
-                    //    if *p == current {
-                    //        'X'
-                    //    } else if deadend.contains(p) {
-                    //        '?'
-                    //    } else if list.contains(p) {
-                    //        'O'
-                    //    } else {
-                    //        *c.unwrap_or(&'.')
-                    //    }
-                    //});
-                }
+            map.insert(*from, (current, count));
+            map.insert(current, (*from, count));
+            if current == *goal {
+                return;
             }
 
-            if v.is_empty() {
-                return None;
+            for n in nbs.iter() {
+                compress(grid, map, visited, n, goal);
             }
-
-            return Some(v);
         }
     }
+}
+
+fn longest(
+    map: &HashMap<Point, (Point, usize)>,
+    start: &Point,
+    goal: &Point,
+    visited: HashSet<Point>,
+    score: usize,
+) -> usize {
+    if start == goal {
+        println!("done");
+        return score;
+    }
+    start
+        .neighbours()
+        .into_iter()
+        .filter(|n| !visited.contains(n))
+        .filter_map(|n| map.get(&n))
+        .dbg()
+        .map(|(n, np)| {
+            let mut nv = visited.clone();
+            nv.insert(*n);
+
+            longest(map, n, goal, nv, score + np)
+        })
+        .max()
+        .unwrap_or(0)
 }
 
 fn process2(s: &str) -> usize {
@@ -176,12 +189,15 @@ fn process2(s: &str) -> usize {
     });
     let start = Point::new(1, 0);
     let goal = grid.upper() + Point::new(-1, 0);
+    println!("{:?}", goal);
 
-    walk(&grid, &mut vec![start], goal, &mut vec![])
-        .unwrap()
-        .into_iter()
-        .max()
-        .unwrap()
+    let mut map = HashMap::new();
+    let mut visited = HashSet::new();
+    compress(&grid, &mut map, &mut visited, &start, &goal);
+    map.iter().for_each(|n| println!("{:?}", n));
+
+    let start = Point::new(0, 0);
+    longest(&map, &start, &goal, HashSet::new(), 0)
 }
 
 #[test]
