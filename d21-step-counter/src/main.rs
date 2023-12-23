@@ -65,7 +65,6 @@ fn step_count(grid: &mut CharGrid<char>, step_count: usize) -> usize {
         }
     }
 
-    //https://github.com/villuna/aoc23/wiki/A-Geometric-solution-to-advent-of-code-2023,-day-21
     let even_corners = visited
         .values()
         .filter(|v| **v % 2 == 0 && **v > 65)
@@ -78,28 +77,13 @@ fn step_count(grid: &mut CharGrid<char>, step_count: usize) -> usize {
     let even_full = visited.values().filter(|v| **v % 2 == 0).count();
     let odd_full = visited.values().filter(|v| **v % 2 == 1).count();
 
-    let even_corners = visited
-        .values()
-        .filter(|v| **v % 2 == 0 && **v > 65)
-        .count();
-    let odd_corners = visited
-        .values()
-        .filter(|v| **v % 2 == 1 && **v > 65)
-        .count();
-
     // This is 202300 but im writing it out here to show the process
+    // let n = ((26501365 - (env.dim.0 / 2)) / env.dim.0) as usize;
+
     let n = 202300;
     assert_eq!(n, 202300);
 
-    let even = n * n;
-    let odd = (n + 1) * (n + 1);
-
-    let p2 = odd * visited.values().filter(|v| **v % 2 == 1).count()
-        + even * visited.values().filter(|v| **v % 2 == 0).count()
-        - ((n + 1) * odd_corners)
-        + (n * even_corners);
-
-    p2
+    ((n + 1) * (n + 1)) * odd_full + (n * n) * even_full - (n + 1) * odd_corners + n * even_corners
 }
 
 fn process(s: &str, count: usize) -> usize {
