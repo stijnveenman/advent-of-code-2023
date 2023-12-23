@@ -91,16 +91,7 @@ fn process(s: &str) -> usize {
         }
 
         if current == goal {
-            grid.draw(|p, c| {
-                if list.contains(p) {
-                    'O'
-                } else {
-                    match c {
-                        Some(c) => *c,
-                        _ => '.',
-                    }
-                }
-            });
+            println!("{}", value);
         }
     }
 
