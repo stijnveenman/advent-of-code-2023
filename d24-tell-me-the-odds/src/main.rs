@@ -34,30 +34,9 @@ impl Vec3 {
     fn from_str(s: &str) -> Vec3 {
         let mut iter = s.split(',');
         Vec3 {
-            x: iter
-                .next()
-                .unwrap()
-                .trim()
-                .parse::<i32>()
-                .unwrap()
-                .try_into()
-                .unwrap(),
-            y: iter
-                .next()
-                .unwrap()
-                .trim()
-                .parse::<i32>()
-                .unwrap()
-                .try_into()
-                .unwrap(),
-            z: iter
-                .next()
-                .unwrap()
-                .trim()
-                .parse::<i32>()
-                .unwrap()
-                .try_into()
-                .unwrap(),
+            x: iter.next().unwrap().trim().parse().unwrap(),
+            y: iter.next().unwrap().trim().parse().unwrap(),
+            z: iter.next().unwrap().trim().parse().unwrap(),
         }
     }
 }
