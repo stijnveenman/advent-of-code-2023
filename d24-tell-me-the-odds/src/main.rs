@@ -84,7 +84,12 @@ impl Line {
 fn main() {
     let input = include_str!("./input.txt");
 
-    println!("{}", process(input, 200000000000000.0, 400000000000000.0))
+    //println!("{}", process(input, 200000000000000.0, 400000000000000.0))
+    println!("{}", process2(input))
+}
+
+fn is_parralel(a: &Line, b: &Line) -> bool {
+    a.vel.x / b.vel.x == a.vel.y / b.vel.y && a.vel.z / b.vel.z == a.vel.y / b.vel.y
 }
 
 fn intersect(a: &Line, b: &Line) -> Option<Vec3> {
@@ -143,7 +148,16 @@ fn process(s: &str, min: f64, max: f64) -> usize {
 
 fn process2(s: &str) -> usize {
     let input = parse(s);
-    println!("{:?}", input);
+    input
+        .iter()
+        .combinations(2)
+        .filter(|v| {
+            let a = v.first().unwrap();
+            let b = v.last().unwrap();
+
+            is_parralel(a, b)
+        })
+        .for_each(|p| println!("{:?}", p));
 
     todo!()
 }
