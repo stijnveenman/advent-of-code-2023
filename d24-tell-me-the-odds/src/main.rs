@@ -60,6 +60,25 @@ impl Line {
     fn at_x(&self, x: f64) -> f64 {
         self.y0() + (self.dx() * x)
     }
+
+    fn is_past(&self, v: &Vec3) -> bool {
+        let dx = v.x - self.pos.x;
+        if dx > 0.0 && self.vel.x < 0.0 {
+            return true;
+        }
+        if dx < 0.0 && self.vel.x > 0.0 {
+            return true;
+        }
+
+        let dy = v.y - self.pos.y;
+        if dy < 0.0 && self.vel.y > 0.0 {
+            return true;
+        }
+        if dy > 0.0 && self.vel.y < 0.0 {
+            return true;
+        }
+        false
+    }
 }
 
 fn main() {
@@ -81,12 +100,18 @@ fn intersect(a: &Line, b: &Line) -> Option<Vec3> {
 
     let y = a.at_x(x);
 
-    println!("{:?}:{:?} - {:?}", a.pos, b.pos, (x, y));
-    Some(Vec3 {
+    let v = Vec3 {
         x: (x * 10.0).round() / 10.0,
         y: (y * 10.0).round() / 10.0,
         z: 0.0,
-    })
+    };
+
+    if a.is_past(&v) || b.is_past(&v) {
+        return None;
+    }
+    println!("{:?}:{:?} - {:?}", a.pos, b.pos, (x, y));
+
+    Some(v)
 }
 
 fn parse(s: &str) -> Vec<Line> {
@@ -106,15 +131,13 @@ fn process(s: &str) -> usize {
     input
         .iter()
         .combinations(2)
-        .map(|v| {
+        .filter_map(|v| {
             let a = v.first().unwrap();
             let b = v.last().unwrap();
 
             intersect(a, b)
         })
-        .count();
-
-    todo!()
+        .count()
 }
 
 fn process2(s: &str) -> usize {
@@ -144,4 +167,12 @@ fn p_1() {
     let b = Line::new(Vec3::new(18.0, 19.0, 22.0), Vec3::new(-1.0, -1.0, -2.0));
 
     assert_eq!(intersect(&a, &b).unwrap(), Vec3::new(14.3, 15.3, 0.0))
+}
+
+#[test]
+fn p_2() {
+    let a = Line::new(Vec3::new(19.0, 13.0, 30.0), Vec3::new(-2.0, 1.0, -2.0));
+    let b = Line::new(Vec3::new(20.0, 19.0, 15.0), Vec3::new(1.0, -5.0, -3.0));
+
+    assert_eq!(intersect(&a, &b), None)
 }
