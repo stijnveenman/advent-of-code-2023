@@ -61,7 +61,19 @@ fn intersect(a: &Line, b: &Line) -> Vec3 {
     println!("a {}", a.at_x(14.333));
     println!("b {}", b.at_x(14.333));
 
-    todo!()
+    // a_y0 + a_dx * x = b_y0 + b_dx * x
+    // a_dx * x - b_dx * x = b_y0 - a_y0
+    // x = (b_y0 - a_y0) / (a_dx - b_dx)
+
+    let x = (b.y0() - a.y0()) / (a.dx() - b.dx());
+    let y = a.at_x(x);
+
+    println!("{:?}", (x, y));
+    Vec3 {
+        x: (x * 10.0).round() / 10.0,
+        y: (y * 10.0).round() / 10.0,
+        z: 0.0,
+    }
 }
 
 fn parse(s: &str) -> &str {
@@ -101,5 +113,5 @@ fn p_1() {
     let a = Line::new(Vec3::new(19.0, 13.0, 30.0), Vec3::new(-2.0, 1.0, -2.0));
     let b = Line::new(Vec3::new(18.0, 19.0, 22.0), Vec3::new(-1.0, -1.0, -2.0));
 
-    assert_eq!(intersect(&a, &b), Vec3::new(14.0, 15.0, 0.0))
+    assert_eq!(intersect(&a, &b), Vec3::new(14.3, 15.3, 0.0))
 }
