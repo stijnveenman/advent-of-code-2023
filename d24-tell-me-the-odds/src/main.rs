@@ -11,7 +11,7 @@ static TEST_INPUT: &str = "19, 13, 30 @ -2,  1, -2
 12, 31, 28 @ -1, -2, -1
 20, 19, 15 @  1, -5, -3";
 static TEST_PART1_RESULT: usize = 2;
-static TEST_PART2_RESULT: usize = 420;
+static TEST_PART2_RESULT: usize = 47;
 
 #[derive(PartialEq, Debug)]
 struct Vec3 {
@@ -146,19 +146,83 @@ fn process(s: &str, min: f64, max: f64) -> usize {
         .count()
 }
 
+//public (bool intersects, (BigInteger X, BigInteger Y) pos, BigInteger time) TryIntersectPos(Hail one, Hail two, (int x, int y) offset)
+fn intersect3d(one: &Line, two: &Line, offset_x: f64, offset_y: f64) -> Option<(Vec3, f64)> {
+    //var a = (Pos: (one.Pos.X, one.Pos.Y), Vel: (X: one.Vel.X + offset.x, Y: one.Vel.Y + offset.y));
+    let a = Line::new(
+        Vec3::new(one.pos.x, one.pos.y, 0.0),
+        Vec3::new(one.vel.x + offset_x, one.vel.y + offset_y, 0.0),
+    );
+    let c = Line::new(
+        Vec3::new(two.pos.x, two.pos.y, 0.0),
+        Vec3::new(two.vel.x + offset_x, two.vel.y + offset_y, 0.0),
+    );
+
+    let d = (a.vel.x * -1.0 * c.vel.y) - (a.vel.y * -1.0 * c.vel.x);
+
+    if d == 0.0 {
+        return None;
+    }
+
+    let qx = (-1.0 * c.vel.y * (c.pos.x - a.pos.x)) - (-1.0 * c.vel.x * (c.pos.y - a.pos.y));
+    let qy = (a.vel.x * (c.pos.y - a.pos.y)) - (a.vel.y * (c.pos.x - a.pos.x));
+
+    let t = qx / d;
+    let s = qy / d;
+
+    let px = a.pos.x + t * a.vel.x;
+    let py = a.pos.y + t * a.vel.y;
+
+    Some((Vec3::new(px, py, 0.0), t))
+}
+
 fn process2(s: &str) -> usize {
     let input = parse(s);
-    input
-        .iter()
-        .combinations(2)
-        .filter(|v| {
-            let a = v.first().unwrap();
-            let b = v.last().unwrap();
+    let r = 3000;
 
-            is_parralel(a, b)
-        })
-        .for_each(|p| println!("{:?}", p));
+    let mut iter = input.iter();
+    let l0 = iter.next().unwrap();
+    let l1 = iter.next().unwrap();
+    let l2 = iter.next().unwrap();
+    let l3 = iter.next().unwrap();
 
+    for x in -r..r {
+        let x = f64::try_from(x).unwrap();
+        for y in -r..r {
+            let y = f64::try_from(y).unwrap();
+
+            let Some(intersect1) = intersect3d(l1, l0, x, y) else {
+                continue;
+            };
+            let Some(intersect2) = intersect3d(l2, l0, x, y) else {
+                continue;
+            };
+            let Some(intersect3) = intersect3d(l3, l0, x, y) else {
+                continue;
+            };
+
+            if intersect1.0 != intersect2.0 || intersect1.0 != intersect3.0 {
+                continue;
+            }
+
+            println!("found {:?} trying z", (x, y));
+            for z in -r..r {
+                let z = f64::try_from(z).unwrap();
+
+                let intersect_z = l1.pos.z + intersect1.1 * (l1.vel.z + z);
+                let intersect_z2 = l2.pos.z + intersect2.1 * (l2.vel.z + z);
+                let intersect_z3 = l3.pos.z + intersect3.1 * (l3.vel.z + z);
+
+                if intersect_z != intersect_z2 || intersect_z != intersect_z3 {
+                    continue;
+                }
+
+                return (intersect1.0.x + intersect1.0.y + intersect_z).round() as usize;
+            }
+        }
+    }
+
+    println!("ran out");
     todo!()
 }
 
