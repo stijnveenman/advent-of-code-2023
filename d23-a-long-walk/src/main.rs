@@ -1,7 +1,10 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 mod util;
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::{HashMap, HashSet},
+    hash::Hash,
+};
 
 use aoc_toolbox::{char_grid::CharGrid, point::Point};
 use chrono::Local;
@@ -105,13 +108,18 @@ fn process(s: &str) -> usize {
     max
 }
 
-fn insert(map: &mut HashMap<Point, Vec<(Point, usize)>>, from: &Point, to: &Point, value: usize) {
-    let mut v = map.get(from).unwrap_or(&vec![]).to_vec();
-    v.push((*to, value));
+fn insert(
+    map: &mut HashMap<Point, HashSet<(Point, usize)>>,
+    from: &Point,
+    to: &Point,
+    value: usize,
+) {
+    let mut v = map.get(from).unwrap_or(&HashSet::new()).clone();
+    v.insert((*to, value));
     map.insert(*from, v);
 
-    let mut v = map.get(to).unwrap_or(&vec![]).to_vec();
-    v.push((*from, value));
+    let mut v = map.get(to).unwrap_or(&HashSet::new()).clone();
+    v.insert((*from, value));
     map.insert(*to, v);
 }
 
@@ -119,7 +127,7 @@ fn compress(
     grid: &CharGrid<char>,
     from: Point,
     goal: Point,
-) -> HashMap<Point, Vec<(Point, usize)>> {
+) -> HashMap<Point, HashSet<(Point, usize)>> {
     let mut map = HashMap::new();
     let mut visited = HashSet::new();
     let mut open = vec![(from, 0, from + Point::UP, from)];
@@ -153,7 +161,7 @@ fn compress(
 }
 
 fn longest(
-    map: &HashMap<Point, Vec<(Point, usize)>>,
+    map: &HashMap<Point, HashSet<(Point, usize)>>,
     start: Point,
     goal: Point,
     visited: HashSet<Point>,
@@ -183,10 +191,12 @@ fn longest(
         })
         .for_each(|v| {
             if v > max {
-                let now = Local::now();
-                let res = now.format("%Y-%m-%d %H:%M:%S");
                 max = v;
-                println!("{}: new max {}", res, max);
+                if score == 0 {
+                    let now = Local::now();
+                    let res = now.format("%Y-%m-%d %H:%M:%S");
+                    println!("{}: new max {}", res, max);
+                }
             }
         });
 
@@ -203,6 +213,11 @@ fn process2(s: &str) -> usize {
 
     let map = compress(&grid, start, goal);
     println!("done compressing: {} steps", map.len());
+
+    //map.iter().filter(|n| n.1.len() > 3).for_each(|n| {
+    //    println!("{:?} ---- ", n.0);
+    //    n.1.iter().for_each(|n| println!("{:?}", n));
+    //});
 
     longest(&map, start, goal, HashSet::new(), 0)
 }
