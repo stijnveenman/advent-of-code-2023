@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 mod util;
+use itertools::Itertools;
 #[allow(unused_imports)]
 use util::*;
 
@@ -9,7 +10,7 @@ static TEST_INPUT: &str = "19, 13, 30 @ -2,  1, -2
 20, 25, 34 @ -2, -2, -4
 12, 31, 28 @ -1, -2, -1
 20, 19, 15 @  1, -5, -3";
-static TEST_PART1_RESULT: usize = 420;
+static TEST_PART1_RESULT: usize = 2;
 static TEST_PART2_RESULT: usize = 420;
 
 #[derive(PartialEq, Debug)]
@@ -19,6 +20,7 @@ struct Vec3 {
     z: f64,
 }
 
+#[derive(Debug)]
 struct Line {
     pos: Vec3,
     vel: Vec3,
@@ -27,6 +29,36 @@ struct Line {
 impl Vec3 {
     fn new(x: f64, y: f64, z: f64) -> Vec3 {
         Vec3 { x, y, z }
+    }
+
+    fn from_str(s: &str) -> Vec3 {
+        let mut iter = s.split(',');
+        Vec3 {
+            x: iter
+                .next()
+                .unwrap()
+                .trim()
+                .parse::<i32>()
+                .unwrap()
+                .try_into()
+                .unwrap(),
+            y: iter
+                .next()
+                .unwrap()
+                .trim()
+                .parse::<i32>()
+                .unwrap()
+                .try_into()
+                .unwrap(),
+            z: iter
+                .next()
+                .unwrap()
+                .trim()
+                .parse::<i32>()
+                .unwrap()
+                .try_into()
+                .unwrap(),
+        }
     }
 }
 
@@ -76,8 +108,16 @@ fn intersect(a: &Line, b: &Line) -> Vec3 {
     }
 }
 
-fn parse(s: &str) -> &str {
-    s
+fn parse(s: &str) -> Vec<Line> {
+    s.lines()
+        .map(|l| {
+            let mut iter = l.split('@');
+            Line::new(
+                Vec3::from_str(iter.next().unwrap()),
+                Vec3::from_str(iter.next().unwrap()),
+            )
+        })
+        .collect_vec()
 }
 
 fn process(s: &str) -> usize {
