@@ -68,23 +68,25 @@ fn main() {
     println!("{}", process(input))
 }
 
-fn intersect(a: &Line, b: &Line) -> Vec3 {
-    println!("a {}", a.at_x(14.333));
-    println!("b {}", b.at_x(14.333));
-
+fn intersect(a: &Line, b: &Line) -> Option<Vec3> {
     // a_y0 + a_dx * x = b_y0 + b_dx * x
     // a_dx * x - b_dx * x = b_y0 - a_y0
     // x = (b_y0 - a_y0) / (a_dx - b_dx)
 
     let x = (b.y0() - a.y0()) / (a.dx() - b.dx());
+
+    if x.is_infinite() {
+        return None;
+    }
+
     let y = a.at_x(x);
 
-    println!("{:?}", (x, y));
-    Vec3 {
+    println!("{:?}:{:?} - {:?}", a.pos, b.pos, (x, y));
+    Some(Vec3 {
         x: (x * 10.0).round() / 10.0,
         y: (y * 10.0).round() / 10.0,
         z: 0.0,
-    }
+    })
 }
 
 fn parse(s: &str) -> Vec<Line> {
@@ -101,7 +103,16 @@ fn parse(s: &str) -> Vec<Line> {
 
 fn process(s: &str) -> usize {
     let input = parse(s);
-    println!("{:?}", input);
+    input
+        .iter()
+        .combinations(2)
+        .map(|v| {
+            let a = v.first().unwrap();
+            let b = v.last().unwrap();
+
+            intersect(a, b)
+        })
+        .count();
 
     todo!()
 }
@@ -132,5 +143,5 @@ fn p_1() {
     let a = Line::new(Vec3::new(19.0, 13.0, 30.0), Vec3::new(-2.0, 1.0, -2.0));
     let b = Line::new(Vec3::new(18.0, 19.0, 22.0), Vec3::new(-1.0, -1.0, -2.0));
 
-    assert_eq!(intersect(&a, &b), Vec3::new(14.3, 15.3, 0.0))
+    assert_eq!(intersect(&a, &b).unwrap(), Vec3::new(14.3, 15.3, 0.0))
 }
