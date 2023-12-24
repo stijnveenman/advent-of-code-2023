@@ -84,7 +84,7 @@ impl Line {
 fn main() {
     let input = include_str!("./input.txt");
 
-    println!("{}", process(input))
+    println!("{}", process(input, 200000000000000.0, 400000000000000.0))
 }
 
 fn intersect(a: &Line, b: &Line) -> Option<Vec3> {
@@ -126,7 +126,7 @@ fn parse(s: &str) -> Vec<Line> {
         .collect_vec()
 }
 
-fn process(s: &str) -> usize {
+fn process(s: &str, min: f64, max: f64) -> usize {
     let input = parse(s);
     input
         .iter()
@@ -137,6 +137,7 @@ fn process(s: &str) -> usize {
 
             intersect(a, b)
         })
+        .filter(|v| (min..max).contains(&v.x) && (min..max).contains(&v.y))
         .count()
 }
 
@@ -149,7 +150,7 @@ fn process2(s: &str) -> usize {
 
 #[test]
 fn test_part1() {
-    let result = process(TEST_INPUT);
+    let result = process(TEST_INPUT, 7.0, 27.0);
 
     assert_eq!(dbg!(result), TEST_PART1_RESULT)
 }
