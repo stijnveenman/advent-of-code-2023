@@ -179,9 +179,15 @@ fn process(s: &str) -> usize {
     let bricks = settle(input);
 
     let supporting = find_supporting_bricks(&bricks);
-    supporting.iter().dbg().collect_vec();
 
-    todo!()
+    bricks
+        .iter()
+        .filter(|brick| {
+            supporting
+                .iter()
+                .all(|other| !other.1.contains(brick) || other.1.len() > 1)
+        })
+        .count()
 }
 
 fn process2(s: &str) -> usize {
