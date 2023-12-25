@@ -59,11 +59,33 @@ fn build_connections(s: Vec<(&str, Vec<&str>)>) -> HashMap<String, HashSet<Strin
     m
 }
 
+fn loop_detect(connections: &HashMap<String, HashSet<String>>, start: &str) -> HashSet<String> {
+    let mut open = vec![start];
+    let mut visited = HashSet::new();
+
+    while let Some(current) = open.pop() {
+        let nbs = connections.get(current).unwrap();
+
+        for n in nbs {
+            if visited.contains(n) {
+                continue;
+            }
+
+            visited.insert(n.to_string());
+            open.push(n);
+        }
+    }
+    visited
+}
+
 fn process(s: &str) -> usize {
     let input = parse(s);
     let connections = build_connections(input);
 
-    println!("{:?}", connections);
+    println!(
+        "loop len {:?}",
+        loop_detect(&connections, connections.keys().next().unwrap()).len()
+    );
 
     todo!()
 }
