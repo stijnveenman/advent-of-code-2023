@@ -90,16 +90,11 @@ fn process(s: &str) -> usize {
     let input = parse(s);
     let mut connections = build_connections(input);
 
-    cut(&mut connections, "hfx", "pzl");
-    cut(&mut connections, "nvd", "jqt");
-    cut(&mut connections, "bvb", "cmg");
+    cut(&mut connections, "xvh", "dhn");
+    cut(&mut connections, "lxt", "lsv");
+    cut(&mut connections, "qmr", "ptj");
 
-    println!(
-        "loop len {:?}",
-        loop_detect(&connections, connections.keys().next().unwrap()).len()
-    );
-
-    loop_detect(&connections, "lhk").len() * loop_detect(&connections, "jqt").len()
+    loop_detect(&connections, "qmr").len() * loop_detect(&connections, "ptj").len()
 }
 
 fn process2(s: &str) -> usize {
