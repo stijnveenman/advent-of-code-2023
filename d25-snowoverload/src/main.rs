@@ -78,16 +78,28 @@ fn loop_detect(connections: &HashMap<String, HashSet<String>>, start: &str) -> H
     visited
 }
 
+fn cut(connections: &mut HashMap<String, HashSet<String>>, from: &str, to: &str) {
+    let hs = connections.get_mut(from).unwrap();
+    hs.remove(to);
+
+    let hs = connections.get_mut(to).unwrap();
+    hs.remove(from);
+}
+
 fn process(s: &str) -> usize {
     let input = parse(s);
-    let connections = build_connections(input);
+    let mut connections = build_connections(input);
+
+    cut(&mut connections, "hfx", "pzl");
+    cut(&mut connections, "nvd", "jqt");
+    cut(&mut connections, "bvb", "cmg");
 
     println!(
         "loop len {:?}",
         loop_detect(&connections, connections.keys().next().unwrap()).len()
     );
 
-    todo!()
+    loop_detect(&connections, "lhk").len() * loop_detect(&connections, "jqt").len()
 }
 
 fn process2(s: &str) -> usize {
