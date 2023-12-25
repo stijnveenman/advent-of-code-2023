@@ -18,12 +18,12 @@ static TEST_INPUT: &str = "1,0,1~1,2,1
 0,1,6~2,1,6
 1,1,8~1,1,9";
 static TEST_PART1_RESULT: usize = 5;
-static TEST_PART2_RESULT: usize = 420;
+static TEST_PART2_RESULT: usize = 7;
 
 fn main() {
     let input = include_str!("./input.txt");
 
-    println!("{}", process(input))
+    println!("{}", process2(input))
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
@@ -190,11 +190,45 @@ fn process(s: &str) -> usize {
         .count()
 }
 
+fn recursive_supporting<'a>(
+    supporting: &'a HashMap<&'a Brick, HashSet<&'a Brick>>,
+    brick: &'a Brick,
+) -> HashSet<&'a Brick> {
+    let mut removed = HashSet::new();
+    removed.insert(brick);
+
+    loop {
+        let freefalling = supporting
+            .iter()
+            .filter(|b| !b.1.is_empty())
+            .filter(|b| b.1.iter().all(|brick| removed.contains(brick)))
+            .filter(|b| !removed.contains(b.0))
+            .collect_vec();
+
+        if freefalling.is_empty() {
+            break;
+        }
+
+        for n in freefalling {
+            removed.insert(n.0);
+        }
+    }
+
+    removed
+}
+
 fn process2(s: &str) -> usize {
     let input = parse(s);
-    println!("{:?}", input);
+    let bricks = settle(input);
 
-    todo!()
+    let supporting = find_supporting_bricks(&bricks);
+
+    let f = bricks.last().unwrap();
+
+    bricks
+        .iter()
+        .map(|brick| recursive_supporting(&supporting, brick).len() - 1)
+        .sum()
 }
 
 #[test]
