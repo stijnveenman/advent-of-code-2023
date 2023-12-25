@@ -26,7 +26,7 @@ fn main() {
     println!("{}", process(input))
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 struct Vec3 {
     x: usize,
     y: usize,
@@ -61,7 +61,7 @@ impl Vec3 {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 struct Brick {
     start: Vec3,
     end: Vec3,
@@ -145,11 +145,17 @@ fn settle(mut bricks: Vec<Brick>) -> Vec<Brick> {
 }
 
 // hahsmap per brick what bricks support it
-fn find_supporting_bricks(bricks: &[Brick]) -> HashMap<Brick, HashSet<Brick>> {
+fn find_supporting_bricks(bricks: &[Brick]) -> HashMap<&Brick, HashSet<&Brick>> {
     let mut hm = HashMap::new();
 
     for brick in bricks {
         let at_z = brick.min_z() - 1;
+
+        if !hm.contains_key(brick) {
+            hm.insert(brick, HashSet::new());
+        }
+        let hs = hm.get_mut(brick).unwrap();
+
         for other in bricks {
             if other == brick || !other.has_z(at_z) {
                 continue;
@@ -161,7 +167,7 @@ fn find_supporting_bricks(bricks: &[Brick]) -> HashMap<Brick, HashSet<Brick>> {
             }
 
             //if collusion, add it to a HashSet
-            println!("{:?} AND {:?}\n", brick, other);
+            hs.insert(other);
         }
     }
 
@@ -173,6 +179,7 @@ fn process(s: &str) -> usize {
     let bricks = settle(input);
 
     let supporting = find_supporting_bricks(&bricks);
+    supporting.iter().dbg().collect_vec();
 
     todo!()
 }
