@@ -1,7 +1,10 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 mod util;
-use std::str::FromStr;
+use std::{
+    collections::{HashMap, HashSet},
+    str::FromStr,
+};
 
 use itertools::Itertools;
 #[allow(unused_imports)]
@@ -58,7 +61,7 @@ impl Vec3 {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 struct Brick {
     start: Vec3,
     end: Vec3,
@@ -71,6 +74,10 @@ impl Brick {
 
     fn min_z(&self) -> usize {
         self.start.z.min(self.end.z)
+    }
+
+    fn max_z(&self) -> usize {
+        self.start.z.max(self.end.z)
     }
 
     fn has_z(&self, z: usize) -> bool {
@@ -137,10 +144,35 @@ fn settle(mut bricks: Vec<Brick>) -> Vec<Brick> {
     settled
 }
 
+// hahsmap per brick what bricks support it
+fn find_supporting_bricks(bricks: &[Brick]) -> HashMap<Brick, HashSet<Brick>> {
+    let mut hm = HashMap::new();
+
+    for brick in bricks {
+        let at_z = brick.min_z() - 1;
+        for other in bricks {
+            if other == brick || !other.has_z(at_z) {
+                continue;
+            }
+
+            //check collision
+            if !brick.collides_with(other) {
+                continue;
+            }
+
+            //if collusion, add it to a HashSet
+            println!("{:?} AND {:?}\n", brick, other);
+        }
+    }
+
+    hm
+}
+
 fn process(s: &str) -> usize {
     let input = parse(s);
     let bricks = settle(input);
-    println!("{:?}", bricks);
+
+    let supporting = find_supporting_bricks(&bricks);
 
     todo!()
 }
