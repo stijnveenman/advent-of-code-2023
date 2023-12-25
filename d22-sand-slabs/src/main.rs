@@ -123,6 +123,7 @@ fn settle(mut bricks: Vec<Brick>) -> Vec<Brick> {
                 .any(|other| other.has_z(z) && brick.collides_with(other))
             {
                 to_z = z + 1;
+                break;
             }
         }
 
