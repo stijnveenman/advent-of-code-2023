@@ -57,8 +57,12 @@ struct Brick {
 }
 
 impl Brick {
-    pub fn new(start: Vec3, end: Vec3) -> Brick {
+    fn new(start: Vec3, end: Vec3) -> Brick {
         Brick { start, end }
+    }
+
+    fn min_z(&self) -> usize {
+        self.start.z.min(self.end.z)
     }
 }
 
@@ -71,9 +75,24 @@ fn parse(s: &str) -> Vec<Brick> {
         .collect_vec()
 }
 
+fn settle(mut bricks: Vec<Brick>) -> Vec<Brick> {
+    bricks.sort_by_key(|b| b.min_z());
+    let mut settled = vec![];
+
+    for brick in bricks {
+        if brick.min_z() == 1 {
+            settled.push(brick);
+            continue;
+        }
+    }
+
+    settled
+}
+
 fn process(s: &str) -> usize {
     let input = parse(s);
-    println!("{:?}", input);
+    let bricks = settle(input);
+    println!("{:?}", bricks);
 
     todo!()
 }
