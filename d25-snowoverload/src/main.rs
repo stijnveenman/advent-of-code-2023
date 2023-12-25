@@ -24,7 +24,7 @@ static TEST_PART2_RESULT: usize = 420;
 fn main() {
     let input = include_str!("./input.txt");
 
-    println!("{}", process(TEST_INPUT))
+    println!("{}", process(input))
 }
 
 fn parse(s: &str) -> Vec<(&str, Vec<&str>)> {
@@ -39,11 +39,11 @@ fn parse(s: &str) -> Vec<(&str, Vec<&str>)> {
 
 fn process(s: &str) -> usize {
     let input = parse(s);
-    input.iter().for_each(|l| {
-        l.1.iter().for_each(|i| {
-            println!("{} --> {}", l.0, i);
-        })
-    });
+    println!("graph {{");
+    input
+        .iter()
+        .for_each(|l| println!("{} -- {{{}}}", l.0, l.1.iter().join(" ")));
+    println!("}}");
 
     todo!()
 }
