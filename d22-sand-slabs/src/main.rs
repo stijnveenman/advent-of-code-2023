@@ -23,7 +23,7 @@ fn main() {
     println!("{}", process(input))
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 struct Vec3 {
     x: usize,
     y: usize,
@@ -48,6 +48,14 @@ impl Vec3 {
     fn new(x: usize, y: usize, z: usize) -> Vec3 {
         Vec3 { x, y, z }
     }
+
+    fn with_z(&self, z: usize) -> Vec3 {
+        Vec3 {
+            x: self.x,
+            y: self.y,
+            z,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -63,6 +71,29 @@ impl Brick {
 
     fn min_z(&self) -> usize {
         self.start.z.min(self.end.z)
+    }
+
+    fn has_z(&self, z: usize) -> bool {
+        (self.start.z..=self.end.z).contains(&z)
+    }
+
+    fn points(&self) -> Vec<Vec3> {
+        (self.start.x..=self.end.x)
+            .flat_map(|x| (self.start.y..=self.end.y).map(move |y| Vec3::new(x, y, 0)))
+            .collect_vec()
+    }
+
+    fn collides_with(&self, other: &Brick) -> bool {
+        let mine = self.points();
+        let others = other.points();
+
+        mine.iter().any(|p| others.contains(p))
+    }
+
+    fn with_min_z(&self, z: usize) -> Brick {
+        let dz = self.end.z - self.start.z;
+
+        Brick::new(self.start.with_z(z), self.end.with_z(z + dz))
     }
 }
 
@@ -84,6 +115,22 @@ fn settle(mut bricks: Vec<Brick>) -> Vec<Brick> {
             settled.push(brick);
             continue;
         }
+
+        let mut to_z = 1;
+        for z in (1..brick.min_z()).rev() {
+            if settled
+                .iter()
+                .any(|other| other.has_z(z) && brick.collides_with(other))
+            {
+                to_z = z + 1;
+            }
+        }
+
+        settled.iter().for_each(|s| println!("set: {:?}", s));
+        println!("{:?} found to_z {}", brick, to_z);
+        println!("placing {:?}\n", brick.with_min_z(to_z));
+
+        settled.push(brick.with_min_z(to_z));
     }
 
     settled
