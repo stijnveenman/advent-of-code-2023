@@ -127,9 +127,9 @@ fn settle(mut bricks: Vec<Brick>) -> Vec<Brick> {
             }
         }
 
-        settled.iter().for_each(|s| println!("set: {:?}", s));
-        println!("{:?} found to_z {}", brick, to_z);
-        println!("placing {:?}\n", brick.with_min_z(to_z));
+        //settled.iter().for_each(|s| println!("set: {:?}", s));
+        //println!("{:?} found to_z {}", brick, to_z);
+        //println!("placing {:?}\n", brick.with_min_z(to_z));
 
         settled.push(brick.with_min_z(to_z));
     }
