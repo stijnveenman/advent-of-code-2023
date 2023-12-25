@@ -1,6 +1,8 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 mod util;
+use std::collections::{hash_map, HashMap, HashSet};
+
 use itertools::Itertools;
 #[allow(unused_imports)]
 use util::*;
@@ -37,13 +39,31 @@ fn parse(s: &str) -> Vec<(&str, Vec<&str>)> {
         .collect_vec()
 }
 
+fn build_connections(s: Vec<(&str, Vec<&str>)>) -> HashMap<String, HashSet<String>> {
+    let mut m = HashMap::new();
+
+    for l in s {
+        let mut set = m.get(l.0).unwrap_or(&HashSet::new()).clone();
+        for i in l.1.iter() {
+            set.insert(i.to_string());
+        }
+        m.insert(l.0.to_string(), set);
+
+        for i in l.1.iter() {
+            let mut set = m.get(*i).unwrap_or(&HashSet::new()).clone();
+            set.insert(l.0.to_string());
+            m.insert(i.to_string(), set);
+        }
+    }
+
+    m
+}
+
 fn process(s: &str) -> usize {
     let input = parse(s);
-    println!("graph {{");
-    input
-        .iter()
-        .for_each(|l| println!("{} -- {{{}}}", l.0, l.1.iter().join(" ")));
-    println!("}}");
+    let connections = build_connections(input);
+
+    println!("{:?}", connections);
 
     todo!()
 }
