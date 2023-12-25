@@ -9,3 +9,4 @@ edition = "2021"
 nom = "7.1.3"
 aoc_toolbox = { path = "../aoc_toolbox/" }
 itertools = "0.12.0"
+rayon = "1.8.0"

@@ -7,6 +7,7 @@ use std::{
 };
 
 use itertools::Itertools;
+use rayon::prelude::*;
 #[allow(unused_imports)]
 use util::*;
 
@@ -226,7 +227,7 @@ fn process2(s: &str) -> usize {
     let f = bricks.last().unwrap();
 
     bricks
-        .iter()
+        .par_iter()
         .map(|brick| recursive_supporting(&supporting, brick).len() - 1)
         .sum()
 }
