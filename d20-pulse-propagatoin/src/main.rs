@@ -6,6 +6,7 @@ use std::{
     fmt::Display,
 };
 
+use nom::Parser;
 use prime_factorization::Factorization;
 #[allow(unused_imports)]
 use util::*;
@@ -232,7 +233,19 @@ fn process2(s: &str) -> usize {
     let state = parse(s);
 
     let mut state = parse(s);
+    println!("graph {{");
+    state.iter().for_each(|f| {
+        let to = match f.1 {
+            Module::FlipFlop(to, _) => to,
+            Module::Conjunction(to, _) => to,
+            Module::Broadcast(to) => to,
+        };
 
+        println!("{} -- {{{}}}", f.0, to.join(" "));
+    });
+    println!("}}");
+
+    todo!();
     //todo fix this properly
     run(&mut state, 1000);
     reset(&mut state);

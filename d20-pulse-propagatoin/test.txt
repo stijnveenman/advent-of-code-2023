@@ -1,0 +1,60 @@
+graph {
+rh -- {qq lp}
+lr -- {bx fr}
+tg -- {bc dx}
+jf -- {qc gj}
+lp -- {lz}
+vt -- {lr bx}
+mm -- {gz}
+gz -- {nf}
+lm -- {jm}
+ll -- {zx}
+hk -- {bc}
+db -- {jm}
+dg -- {ll bx}
+ks -- {nd}
+sc -- {ks gj}
+st -- {bc mm}
+fr -- {bx tb}
+tb -- {bx}
+xf -- {qq qj}
+gr -- {hn}
+qc -- {sf gj}
+pz -- {gj}
+qj -- {qq}
+nf -- {bc tg}
+sg -- {jm}
+bc -- {mn zl xb mm dh hv gz}
+jm -- {rx}
+cv -- {vq}
+pm -- {bx nq}
+bt -- {gr}
+xb -- {zl}
+sf -- {pz gj}
+dx -- {hk bc}
+qq -- {lm gr cv vq lp pl bt}
+hv -- {xb}
+xh -- {vt bx}
+ld -- {cl}
+bx -- {ll xc db}
+lz -- {cv qq}
+nd -- {gj tr}
+sz -- {gj ld}
+xc -- {bx pm}
+xr -- {sc gj}
+zl -- {zh}
+hn -- {gv qq}
+zx -- {bx ms}
+pl -- {qq rh}
+dh -- {jm}
+gv -- {xf qq}
+vq -- {bt}
+zh -- {bc st}
+broadcaster -- {pl xr mn xc}
+tr -- {gj sz}
+ms -- {bx xh}
+nq -- {dg bx}
+mn -- {bc hv}
+gj -- {ks ld sg xr}
+cl -- {gj jf}
+}
