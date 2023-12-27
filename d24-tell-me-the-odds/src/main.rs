@@ -46,6 +46,13 @@ impl Line {
         Line { pos, vel }
     }
 
+    fn with_offset(&self, offset_x: f64, offset_y: f64) -> Line {
+        Line::new(
+            Vec3::new(self.pos.x, self.pos.y, self.pos.z),
+            Vec3::new(self.vel.x + offset_x, self.vel.y + offset_y, self.vel.z),
+        )
+    }
+
     fn dx(&self) -> f64 {
         let x: f64 = self.vel.x;
         let y: f64 = self.vel.y;
@@ -114,7 +121,6 @@ fn intersect(a: &Line, b: &Line) -> Option<Vec3> {
     if a.is_past(&v) || b.is_past(&v) {
         return None;
     }
-    println!("{:?}:{:?} - {:?}", a.pos, b.pos, (x, y));
 
     Some(v)
 }
@@ -205,7 +211,10 @@ fn process2(s: &str) -> usize {
                 continue;
             }
 
-            println!("found {:?} trying z", (x, y));
+            if let Some(a) = intersect(&l1.with_offset(x, y), &l0.with_offset(x, y)) {
+                println!("{:?} - {:?}", a, intersect1);
+            }
+
             for z in -r..r {
                 let z = f64::try_from(z).unwrap();
 
